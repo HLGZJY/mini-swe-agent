@@ -23,6 +23,13 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
 
+from minisweagent.utils.error_taxonomy import (
+    ERROR_INVALID_PARAMS,
+    ERROR_UNKNOWN_TOOL,
+    classify_exception,
+    guidance_for,
+)
+
 
 @dataclass
 class ToolSpec:
@@ -120,6 +127,7 @@ class ToolRegistry:
                 "output": f"Error: unknown or non-executable tool '{action.get('tool')}'.",
                 "returncode": 1,
                 "exception_info": "tool dispatch failed; action was NOT executed",
+                "error_class": ERROR_UNKNOWN_TOOL,
             }
         args = dict(action.get("args") or {})
         if base_dir:
@@ -140,14 +148,18 @@ class ToolRegistry:
                 ),
                 "returncode": 1,
                 "exception_info": "tool arguments failed schema validation; action was NOT executed",
+                "error_class": ERROR_INVALID_PARAMS,
             }
         try:
             return {"output": spec.execute(validated), "returncode": 0, "exception_info": None}
         except Exception as e:
+            error_class = classify_exception(e)
+            guidance = guidance_for(error_class)
             return {
                 "output": f"Error: tool '{spec.name}' raised {type(e).__name__}: {e}",
                 "returncode": 1,
-                "exception_info": traceback.format_exc(),
+                "exception_info": traceback.format_exc() + (f"\n{guidance}" if guidance else ""),
+                "error_class": error_class,
             }
 
 

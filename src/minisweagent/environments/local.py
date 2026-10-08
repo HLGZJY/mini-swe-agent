@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+from minisweagent.utils.error_taxonomy import classify_exception, guidance_for
 from minisweagent.utils.log import logger
 from minisweagent.utils.serialize import recursive_merge
 from minisweagent.utils.submission import check_finished
@@ -103,11 +104,16 @@ class LocalEnvironment:
             raw_output = (
                 raw_output.decode("utf-8", errors="replace") if isinstance(raw_output, bytes) else (raw_output or "")
             )
+            error_class = classify_exception(e)
+            guidance = guidance_for(error_class)
             output = {
                 "output": raw_output,
                 "returncode": -1,
-                "exception_info": f"An error occurred while executing the command: {e}",
+                "exception_info": (
+                    f"An error occurred while executing the command: {e}" + (f"\n{guidance}" if guidance else "")
+                ),
                 "extra": {"exception_type": type(e).__name__, "exception": str(e)},
+                "error_class": error_class,
             }
         self._check_finished(output)
         return output
