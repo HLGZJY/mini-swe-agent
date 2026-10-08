@@ -5,11 +5,13 @@
 """
 
 import subprocess
+from pathlib import Path
 
 import pytest
 from pydantic import BaseModel, Field
 
 import minisweagent.models.utils.tool_registry as tr_module
+from minisweagent.agents.default import DefaultAgent
 from minisweagent.environments.local import LocalEnvironment
 from minisweagent.models.utils.tool_registry import ToolRegistry, ToolSpec, get_default_registry
 from minisweagent.utils import error_taxonomy as et
@@ -193,3 +195,66 @@ class TestTransientRetry:
         spec = get_default_registry().get("bash")
         assert spec.execute is None
         assert spec.transient_errors == ()
+
+
+class _BoomModel:
+    """Model whose query() always raises — simulates retry budget exhausted upstream."""
+
+    def get_template_vars(self):
+        return {}
+
+    def format_message(self, role, content, **kwargs):
+        return {"role": role, "content": content, "extra": kwargs.get("extra", {})}
+
+    def query(self, messages):
+        raise RuntimeError("simulated persistent failure")
+
+    def serialize(self):
+        return {}
+
+
+class _StubEnv:
+    def get_template_vars(self):
+        return {}
+
+    def execute(self, action):
+        raise AssertionError("env must not be called in this test")
+
+    def serialize(self):
+        return {}
+
+
+class TestControlledExit:
+    """on_uncaught_exception: default raise (upstream) vs controlled_exit (魔改 2)."""
+
+    def _agent(self, tmp_path: Path, **kwargs) -> DefaultAgent:
+        return DefaultAgent(
+            _BoomModel(),
+            _StubEnv(),
+            system_template="",
+            instance_template="",
+            output_path=tmp_path / "traj.json",
+            **kwargs,
+        )
+
+    def test_default_mode_reraises_after_recording_exit(self, tmp_path):
+        agent = self._agent(tmp_path)
+        with pytest.raises(RuntimeError, match="simulated persistent failure"):
+            agent.run(task="t")
+        # the exit message was recorded before the raise (upstream behavior kept)
+        assert agent.messages[-1]["role"] == "exit"
+        assert agent.messages[-1]["extra"]["exit_status"] == "RuntimeError"
+
+    def test_controlled_exit_stops_cleanly_and_saves_trajectory(self, tmp_path):
+        agent = self._agent(tmp_path, on_uncaught_exception="controlled_exit")
+        result = agent.run(task="t")  # no exception escapes
+        assert result["exit_status"] == "RuntimeError"
+        assert result["submission"] == ""
+        assert agent.messages[-1]["role"] == "exit"
+        # trajectory is still persisted by the finally-save in run()
+        assert (tmp_path / "traj.json").exists()
+
+    def test_controlled_exit_is_opt_in(self, tmp_path):
+        """Config default stays 'raise' — the bare re-raise is upstream behavior."""
+        agent = self._agent(tmp_path)
+        assert agent.config.on_uncaught_exception == "raise"

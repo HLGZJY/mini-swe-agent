@@ -7,6 +7,7 @@ import logging
 import time
 import traceback
 from pathlib import Path
+from typing import Literal
 
 from jinja2 import StrictUndefined, Template
 from pydantic import BaseModel
@@ -32,6 +33,13 @@ class AgentConfig(BaseModel):
     """Stop agent after this many seconds of wall-clock time. 0 means no limit."""
     max_consecutive_format_errors: int = 3
     """Exit after this many format errors in a row (0 = no limit)."""
+    on_uncaught_exception: Literal["raise", "controlled_exit"] = "raise"
+    """What to do with exceptions that escape the step loop (e.g. model-layer retry
+    budget exhausted, environment died). ``raise`` = upstream behavior: re-raise after
+    recording the exit message (process dies with a traceback). ``controlled_exit`` =
+    log the traceback, keep the recorded exit message and stop the loop — a clean
+    exit_status in the trajectory instead of a crash. Off by default: the bare raise
+    is also the only channel that surfaces bugs in our own code."""
     output_path: Path | None = None
     """Save the trajectory to this path."""
 
@@ -117,7 +125,9 @@ class DefaultAgent:
                 self.add_messages(*e.messages)
             except Exception as e:
                 self.handle_uncaught_exception(e)
-                raise
+                if self.config.on_uncaught_exception != "controlled_exit":
+                    raise
+                self.logger.error("Uncaught exception, controlled exit:\n%s", traceback.format_exc())
             finally:
                 self.save(self.config.output_path)
             if self.messages[-1].get("role") == "exit":
