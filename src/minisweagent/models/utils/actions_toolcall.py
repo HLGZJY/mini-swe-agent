@@ -7,6 +7,7 @@ from jinja2 import StrictUndefined, Template
 
 from minisweagent.exceptions import FormatError
 from minisweagent.models.utils.openai_multimodal import expand_multimodal_content
+from minisweagent.models.utils.tool_registry import get_default_registry
 
 BASH_TOOL = {
     "type": "function",
@@ -51,6 +52,7 @@ def parse_toolcall_actions(
             }
         )
     actions = []
+    registry = get_default_registry()
     for tool_call in tool_calls:
         error_msg = ""
         args = {}
@@ -58,10 +60,17 @@ def parse_toolcall_actions(
             args = json.loads(tool_call.function.arguments)
         except Exception as e:
             error_msg = f"Error parsing tool call arguments: {e}."
-        if tool_call.function.name != "bash":
+        spec = registry.get(tool_call.function.name)
+        if spec is None:
             error_msg += f"Unknown tool '{tool_call.function.name}'."
-        if not isinstance(args, dict) or "command" not in args:
-            error_msg += "Missing 'command' argument in bash tool call."
+        elif spec.execute is None:
+            # Env-executed tool (bash): legacy action shape and legacy protocol checks.
+            if not isinstance(args, dict) or "command" not in args:
+                error_msg += "Missing 'command' argument in bash tool call."
+        elif not isinstance(args, dict):
+            # Structured tool: args must at least be a JSON object at protocol level.
+            # Per-argument schema validation happens at execution time (error self-healing).
+            error_msg += f"Invalid arguments for tool '{spec.name}': expected a JSON object."
         if error_msg:
             raise FormatError(
                 {
@@ -72,7 +81,10 @@ def parse_toolcall_actions(
                     "extra": {"interrupt_type": "FormatError"},
                 }
             )
-        actions.append({"command": args["command"], "tool_call_id": tool_call.id})
+        if spec.execute is None:
+            actions.append({"command": args["command"], "tool_call_id": tool_call.id})
+        else:
+            actions.append({"tool": spec.name, "args": args, "tool_call_id": tool_call.id})
     return actions
 
 

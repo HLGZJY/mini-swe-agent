@@ -4,7 +4,7 @@ import pytest
 
 from minisweagent.exceptions import FormatError
 from minisweagent.models.litellm_model import LitellmModel, LitellmModelConfig
-from minisweagent.models.utils.actions_toolcall import BASH_TOOL
+from minisweagent.models.utils.tool_registry import get_default_registry
 
 
 class TestLitellmModelConfig:
@@ -36,7 +36,23 @@ class TestLitellmModel:
         model.query([{"role": "user", "content": "test"}])
 
         mock_completion.assert_called_once()
-        assert mock_completion.call_args.kwargs["tools"] == [BASH_TOOL]
+        tools = mock_completion.call_args.kwargs["tools"]
+        assert [t["function"]["name"] for t in tools] == ["bash", "read_file", "grep", "list_dir"]
+
+    @patch("minisweagent.models.litellm_model.litellm.completion")
+    @patch("minisweagent.models.litellm_model.litellm.cost_calculator.completion_cost")
+    def test_query_bash_only_config_matches_upstream(self, mock_cost, mock_completion):
+        """tools=["bash"] must reproduce the upstream bash-only tool advertisement."""
+        tool_call = MagicMock()
+        tool_call.function.name = "bash"
+        tool_call.function.arguments = '{"command": "echo test"}'
+        tool_call.id = "call_1"
+        mock_completion.return_value = _mock_litellm_response([tool_call])
+        mock_cost.return_value = 0.001
+
+        model = LitellmModel(model_name="gpt-4", tools=["bash"])
+        model.query([{"role": "user", "content": "test"}])
+        assert mock_completion.call_args.kwargs["tools"] == get_default_registry().to_openai_tools(["bash"])
 
     @patch("minisweagent.models.litellm_model.litellm.completion")
     @patch("minisweagent.models.litellm_model.litellm.cost_calculator.completion_cost")

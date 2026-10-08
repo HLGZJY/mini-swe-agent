@@ -12,7 +12,6 @@ from pydantic import BaseModel
 from minisweagent.exceptions import FormatError
 from minisweagent.models import GLOBAL_MODEL_STATS
 from minisweagent.models.utils.actions_toolcall import (
-    BASH_TOOL,
     format_toolcall_observation_messages,
     parse_toolcall_actions,
 )
@@ -20,6 +19,7 @@ from minisweagent.models.utils.anthropic_utils import _reorder_anthropic_thinkin
 from minisweagent.models.utils.cache_control import set_cache_control
 from minisweagent.models.utils.openai_multimodal import expand_multimodal_content
 from minisweagent.models.utils.retry import retry
+from minisweagent.models.utils.tool_registry import get_default_registry
 
 logger = logging.getLogger("litellm_model")
 
@@ -44,6 +44,9 @@ class LitellmModelConfig(BaseModel):
     """Template used to render the observation after executing an action."""
     multimodal_regex: str = ""
     """Regex to extract multimodal content. Empty string disables multimodal processing."""
+    tools: list[str] = ["bash", "read_file", "grep", "list_dir"]
+    """Names of tools (registered in the tool registry) to advertise to the LM.
+    Set to ``["bash"]`` for the bash-only behavior of upstream mini-swe-agent."""
 
 
 class LitellmModel:
@@ -60,13 +63,16 @@ class LitellmModel:
         self.config = config_class(**kwargs)
         if self.config.litellm_model_registry and Path(self.config.litellm_model_registry).is_file():
             litellm.utils.register_model(json.loads(Path(self.config.litellm_model_registry).read_text()))
+        registry = get_default_registry()
+        self._tools_openai = registry.to_openai_tools(self.config.tools)
+        self._tools_response_api = registry.to_response_api_tools(self.config.tools)
 
     def _query(self, messages: list[dict[str, str]], **kwargs):
         try:
             return litellm.completion(
                 model=self.config.model_name,
                 messages=messages,
-                tools=[BASH_TOOL],
+                tools=self._tools_openai,
                 **(self.config.model_kwargs | kwargs),
             )
         except litellm.exceptions.AuthenticationError as e:

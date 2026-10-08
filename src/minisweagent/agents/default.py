@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from minisweagent import Environment, Model, __version__
 from minisweagent.exceptions import FormatError, InterruptAgentFlow, LimitsExceeded, TimeExceeded
+from minisweagent.models.utils.tool_registry import get_default_registry
 from minisweagent.utils.serialize import recursive_merge
 
 
@@ -151,9 +152,21 @@ class DefaultAgent:
         self.add_messages(message)
         return message
 
+    def _execute_action(self, action: dict) -> dict:
+        """Execute a single action: in-process structured tool, or environment command.
+
+        Structured tool actions (``{"tool": name, "args": {...}, "tool_call_id": ...}``)
+        are validated and executed by the tool registry; failures (schema validation,
+        tool exceptions) come back as observations so the model can self-correct.
+        All other actions go to the environment as before.
+        """
+        if "tool" in action:
+            return get_default_registry().execute_action(action)
+        return self.env.execute(action)
+
     def execute_actions(self, message: dict) -> list[dict]:
         """Execute actions in message, add observation messages, return them."""
-        outputs = [self.env.execute(action) for action in message.get("extra", {}).get("actions", [])]
+        outputs = [self._execute_action(action) for action in message.get("extra", {}).get("actions", [])]
         return self.add_messages(*self.model.format_observation_messages(message, outputs, self.get_template_vars()))
 
     def serialize(self, *extra_dicts) -> dict:
