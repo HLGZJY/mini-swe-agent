@@ -9,8 +9,9 @@ import subprocess
 import pytest
 from pydantic import BaseModel, Field
 
+import minisweagent.models.utils.tool_registry as tr_module
 from minisweagent.environments.local import LocalEnvironment
-from minisweagent.models.utils.tool_registry import ToolRegistry, ToolSpec
+from minisweagent.models.utils.tool_registry import ToolRegistry, ToolSpec, get_default_registry
 from minisweagent.utils import error_taxonomy as et
 
 
@@ -109,3 +110,86 @@ class TestLocalEnvironmentErrorClass:
         result = env.execute({"command": "echo hi"})
         assert result["returncode"] == 0
         assert "error_class" not in result
+
+
+class TestTransientRetry:
+    """ToolSpec.transient_errors: declare-idempotent-or-no-retry (魔改 2 设计红线)."""
+
+    def _registry_with_flaky(self, transient_errors, max_retries=2, fail_times=0):
+        registry = ToolRegistry()
+        counter = {"n": 0}
+
+        def flaky(_args):
+            counter["n"] += 1
+            if counter["n"] <= fail_times:
+                raise PermissionError("file locked")
+            return "ok"
+
+        registry.register(
+            ToolSpec(
+                name="flaky",
+                description="",
+                args_model=_Args,
+                execute=flaky,
+                transient_errors=transient_errors,
+                max_retries=max_retries,
+            )
+        )
+        return registry, counter
+
+    def test_transient_error_retried_until_success(self, monkeypatch):
+        monkeypatch.setattr(tr_module, "_sleep", lambda _s: None)
+        registry, counter = self._registry_with_flaky((PermissionError,), fail_times=2)
+        result = registry.execute_action({"tool": "flaky", "args": {"x": 1}})
+        assert result["returncode"] == 0
+        assert result["output"] == "ok"
+        assert counter["n"] == 3  # 1 initial attempt + 2 retries
+
+    def test_retry_budget_exhausted_notes_retries(self, monkeypatch):
+        monkeypatch.setattr(tr_module, "_sleep", lambda _s: None)
+        registry, counter = self._registry_with_flaky((PermissionError,), fail_times=99)
+        result = registry.execute_action({"tool": "flaky", "args": {"x": 1}})
+        assert result["returncode"] == 1
+        assert result["error_class"] == et.ERROR_PERMISSION
+        assert "auto-retried 2 time(s)" in result["output"]
+        assert counter["n"] == 3  # budget respected, no runaway retrying
+
+    def test_exponential_backoff_delays(self, monkeypatch):
+        delays: list[float] = []
+        monkeypatch.setattr(tr_module, "_sleep", delays.append)
+        registry, _ = self._registry_with_flaky((PermissionError,), fail_times=99, max_retries=3)
+        registry.execute_action({"tool": "flaky", "args": {"x": 1}})
+        assert delays == [1, 2, 4]  # exponential, capped at 8s by design
+
+    def test_non_transient_exception_never_retried(self, monkeypatch):
+        monkeypatch.setattr(tr_module, "_sleep", lambda _s: None)
+        registry, counter = self._registry_with_flaky((PermissionError,))
+
+        def buggy(_args):
+            counter["n"] += 1
+            raise RuntimeError("bug")
+
+        registry._tools["flaky"].execute = buggy
+        result = registry.execute_action({"tool": "flaky", "args": {"x": 1}})
+        assert result["returncode"] == 1
+        assert result["error_class"] == et.ERROR_TOOL_ERROR
+        assert counter["n"] == 1  # single attempt: undeclared errors get no framework retry
+
+    def test_no_transient_errors_means_single_attempt(self, monkeypatch):
+        monkeypatch.setattr(tr_module, "_sleep", lambda _s: None)
+        registry, counter = self._registry_with_flaky((), fail_times=99)
+        result = registry.execute_action({"tool": "flaky", "args": {"x": 1}})
+        assert result["error_class"] == et.ERROR_PERMISSION
+        assert counter["n"] == 1
+        assert "auto-retried" not in result["output"]
+
+    def test_builtin_read_tools_declare_permission_transient(self):
+        for name in ("read_file", "grep", "list_dir"):
+            spec = get_default_registry().get(name)
+            assert spec.transient_errors == (PermissionError,), name
+
+    def test_bash_has_no_retry_mechanism_at_all(self):
+        """bash is environment-executed; the framework retry path cannot reach it."""
+        spec = get_default_registry().get("bash")
+        assert spec.execute is None
+        assert spec.transient_errors == ()

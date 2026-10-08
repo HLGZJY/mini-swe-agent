@@ -11,11 +11,17 @@
   tool_call 的观察输出回传给模型，模型下一轮自己修正。这与 bash 命令失败（非零
   exit code）回填观察的语义同构；协议级错误（输出不是合法 tool_call / 未知工具名）
   仍走 FormatError，两者不混用。
+- **声明式瞬态重试**：工具通过 ``ToolSpec.transient_errors`` 声明哪些异常可由框架
+  透明重试（指数退避 + ``max_retries`` 预算）——只有幂等安全（如只读工具）才声明；
+  bash 由环境执行、副作用不可声明，永不自动重试。重试耗尽后回填的观察注明已重试
+  次数，模型仍可自行决定下一步。
 - 仅支持扁平（非嵌套）参数模型：``_clean_schema`` 不处理 ``$defs``。
 """
 
 import json
+import logging
 import re
+import time
 import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -29,6 +35,11 @@ from minisweagent.utils.error_taxonomy import (
     classify_exception,
     guidance_for,
 )
+
+logger = logging.getLogger(__name__)
+
+_sleep = time.sleep
+"""Module-level alias so tests can monkeypatch retry delays."""
 
 
 @dataclass
@@ -46,6 +57,14 @@ class ToolSpec:
     :meth:`ToolRegistry.execute_action`, relative values in these fields are resolved
     against it — in-process tools must operate on the same directory as the agent's
     environment, whose working directory the tool call knows nothing about otherwise."""
+    transient_errors: tuple[type[Exception], ...] = ()
+    """Exception types the framework may transparently retry (exponential backoff).
+    Declare ONLY what is safe to re-execute: retrying a non-idempotent tool repeats
+    its side effects. Empty tuple = never auto-retried (the model still sees the
+    error observation and can retry itself). bash never lands here — it is executed
+    by the environment, and shell commands have undeclarable side effects."""
+    max_retries: int = 2
+    """Retry budget for ``transient_errors`` (initial attempt excluded)."""
 
 
 def _clean_schema(schema: dict) -> dict:
@@ -55,6 +74,18 @@ def _clean_schema(schema: dict) -> dict:
     if isinstance(props, dict):
         out["properties"] = {name: {k: v for k, v in spec.items() if k != "title"} for name, spec in props.items()}
     return out
+
+
+def _error_observation(tool_name: str, e: Exception, *, note: str = "") -> dict:
+    """Build the error observation for a failed tool execution (never raises)."""
+    error_class = classify_exception(e)
+    guidance = guidance_for(error_class)
+    return {
+        "output": f"Error: tool '{tool_name}' raised {type(e).__name__}: {e}{note and ' ' + note}",
+        "returncode": 1,
+        "exception_info": traceback.format_exc() + (f"\n{guidance}" if guidance else ""),
+        "error_class": error_class,
+    }
 
 
 class ToolRegistry:
@@ -120,6 +151,9 @@ class ToolRegistry:
 
         Schema validation failures and tool exceptions are returned as observations
         (error self-healing), never raised: the model sees the error and can retry.
+        Exceptions listed in the tool's ``transient_errors`` are retried transparently
+        (exponential backoff, ``max_retries`` budget) before the error observation is
+        emitted — the observation then notes the retries that were spent.
         """
         spec = self.get(action.get("tool", ""))
         if spec is None or spec.execute is None:
@@ -150,17 +184,32 @@ class ToolRegistry:
                 "exception_info": "tool arguments failed schema validation; action was NOT executed",
                 "error_class": ERROR_INVALID_PARAMS,
             }
-        try:
-            return {"output": spec.execute(validated), "returncode": 0, "exception_info": None}
-        except Exception as e:
-            error_class = classify_exception(e)
-            guidance = guidance_for(error_class)
-            return {
-                "output": f"Error: tool '{spec.name}' raised {type(e).__name__}: {e}",
-                "returncode": 1,
-                "exception_info": traceback.format_exc() + (f"\n{guidance}" if guidance else ""),
-                "error_class": error_class,
-            }
+        attempts = (spec.max_retries + 1) if spec.transient_errors else 1
+        for attempt in range(1, attempts + 1):
+            try:
+                return {"output": spec.execute(validated), "returncode": 0, "exception_info": None}
+            except spec.transient_errors as e:
+                # Empty tuple never matches; only declared-transient errors land here.
+                if attempt == attempts:
+                    return _error_observation(
+                        spec.name,
+                        e,
+                        note=f"(auto-retried {spec.max_retries} time(s) without success)",
+                    )
+                delay = min(2 ** (attempt - 1), 8)
+                logger.warning(
+                    "Tool '%s' hit transient %s (attempt %d/%d), retrying in %.0fs",
+                    spec.name,
+                    type(e).__name__,
+                    attempt,
+                    attempts,
+                    delay,
+                )
+                _sleep(delay)
+            except Exception as e:
+                # Not declared transient: no framework retry — the model decides.
+                return _error_observation(spec.name, e)
+        raise AssertionError("unreachable: attempts >= 1 guarantees a return inside the loop")
 
 
 # --- Builtin tools -----------------------------------------------------------
@@ -262,6 +311,7 @@ _DEFAULT_REGISTRY.register(
         args_model=ReadFileArgs,
         execute=_read_file,
         path_fields=("path",),
+        transient_errors=(PermissionError,),
     )
 )
 _DEFAULT_REGISTRY.register(
@@ -271,6 +321,7 @@ _DEFAULT_REGISTRY.register(
         args_model=GrepArgs,
         execute=_grep,
         path_fields=("path",),
+        transient_errors=(PermissionError,),
     )
 )
 _DEFAULT_REGISTRY.register(
@@ -280,6 +331,7 @@ _DEFAULT_REGISTRY.register(
         args_model=ListDirArgs,
         execute=_list_dir,
         path_fields=("path",),
+        transient_errors=(PermissionError,),
     )
 )
 
