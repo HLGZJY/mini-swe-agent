@@ -26,7 +26,8 @@ from minisweagent.agents.compression import (
     validate_summary,
 )
 from minisweagent.agents.session_store import SessionStore
-from minisweagent.exceptions import FormatError, InterruptAgentFlow, LimitsExceeded, TimeExceeded
+from minisweagent.agents.stall import StallDetector, step_fingerprint, warning_text
+from minisweagent.exceptions import FormatError, InterruptAgentFlow, LimitsExceeded, StalledExceeded, TimeExceeded
 from minisweagent.models.utils.tool_registry import get_default_registry
 from minisweagent.utils.serialize import recursive_merge
 
@@ -73,6 +74,13 @@ class AgentConfig(BaseModel):
     """魔改 4: path to a SQLite file for session persistence (per-step event log +
     resume support). Empty string (default) disables persistence entirely — upstream
     behavior, byte-for-byte, and no DB file is created."""
+    stall_window: int = 0
+    """魔改 5: warn/terminate when this many consecutive steps produce the identical
+    normalized (action, observation) fingerprint. 0 (default) disables stall
+    detection entirely — upstream behavior, byte-for-byte."""
+    stall_max_warnings: int = 2
+    """魔改 5: number of escalating stall warnings before a hard termination on the
+    next strike (0 = terminate on the very first strike, no reminders)."""
 
 
 class DefaultAgent:
@@ -95,6 +103,9 @@ class DefaultAgent:
         self.session_id: str = ""
         if getattr(self.config, "session_db_path", ""):
             self._session = SessionStore(self.config.session_db_path)
+        # 魔改 5: stall detector (inert while stall_window <= 0).
+        self._stall = StallDetector(window=max(self.config.stall_window, 0),
+                                    max_warnings=self.config.stall_max_warnings)
 
     def _agent_type(self) -> str:
         return f"{self.__class__.__module__}.{self.__class__.__name__}"
@@ -111,6 +122,9 @@ class DefaultAgent:
             "cost_last_confirmed": float(getattr(self, "cost_last_confirmed", 0.0)),
             "start_time_epoch": self._start_time,
             "config_snapshot": self.config.model_dump(mode="json"),
+            # 魔改 5: stall detector scalars — restored on resume so a detected
+            # loop does not get a fresh full window after an interruption.
+            **self._stall.to_state(),
         }
 
     def _messages_identity_pos(self, msg: dict | None) -> int | None:
@@ -192,6 +206,7 @@ class DefaultAgent:
         self.extra_template_vars |= {"task": task, **kwargs}
         self.messages = []
         self._last_trigger_msg = None
+        self._stall.reset()  # 魔改 5: a fresh task starts with a fresh escalation ladder
         if self._session is not None:
             self._persist(self._session.create_session, agent_state=self._session_state(),
                           agent_type=self._agent_type(), agent_version=__version__)
@@ -206,8 +221,13 @@ class DefaultAgent:
         """The step loop shared by run() (fresh start) and resume() (魔改 4 restore)."""
         while True:
             try:
-                self.step()
+                observations = self.step()
                 self.n_consecutive_format_errors = 0  # reset on any clean step
+                if self.config.stall_window > 0:
+                    # 魔改 5: fake-progress check before persisting, so the state
+                    # cache always carries the freshest streak scalars (the warning
+                    # injection inside _check_stall persists via add_messages).
+                    self._check_stall(observations)
                 if self._session is not None:
                     self._persist(self._session.update_state, agent_state=self._session_state())
             except FormatError as e:
@@ -248,6 +268,68 @@ class DefaultAgent:
                 break
         return self.messages[-1].get("extra", {})
 
+    def _check_stall(self, observations: list[dict]) -> None:
+        """魔改 5: feed the current step's fingerprint to the detector.
+
+        Signal source: this step's assistant message (``extra.actions``) plus the
+        observation messages just executed — the only filesystem awareness the
+        harness legitimately has (see agents/stall.py for the signal trade-offs).
+        Called right after a clean step, so the newest assistant message is the
+        last ``assistant``-role entry in ``self.messages``.
+
+        Escalation ladder: warning 1 (mild) → warning 2 (strong) → StalledExceeded.
+        Warnings ride ``add_messages`` (role=user, injected after the observations),
+        so with 魔改 4 they are persisted like any other message; the value window
+        of a reminder is the next 2-3 steps, which always sits inside the
+        compression keep-recent window — deliberately no anti-fold marker.
+        """
+        assistant = None
+        for msg in reversed(self.messages):
+            if msg.get("role") == "assistant":
+                assistant = msg
+                break
+        actions = (assistant.get("extra") or {}).get("actions") or [] if assistant else []
+        fp = step_fingerprint(actions, observations)
+        directive = self._stall.observe(fp)
+        if directive is None:
+            return
+        if directive["type"] == "terminate":
+            self.logger.info(
+                "Stall detection: terminating after %s warning(s), %d-step streak.",
+                directive["warnings"], directive["window"],
+            )
+            raise StalledExceeded(
+                {
+                    "role": "exit",
+                    "content": "StalledExceeded",
+                    "extra": {
+                        "exit_status": "StalledExceeded",
+                        "submission": "",
+                        "stall_event": {
+                            "type": "terminate",
+                            "warnings": directive["warnings"],
+                            "window": directive["window"],
+                            "fingerprint": fp,
+                        },
+                    },
+                }
+            )
+        self.logger.info("Stall detection: warning level %s (streak window %d).", directive["level"], directive["window"])
+        self.add_messages(
+            {
+                "role": "user",
+                "content": warning_text(directive["level"], directive["window"]),
+                "extra": {
+                    "stall_event": {
+                        "type": "warning",
+                        "level": directive["level"],
+                        "window": directive["window"],
+                        "fingerprint": fp,
+                    },
+                },
+            }
+        )
+
     def resume(self, session_id: str) -> dict:
         """魔改 4: restore a persisted session and continue the agent loop.
 
@@ -280,6 +362,7 @@ class DefaultAgent:
         self._last_trigger_msg = (
             self.messages[pos] if pos is not None and 0 <= pos < len(self.messages) else None
         )
+        self._stall.from_state(state)  # 魔改 5: streak scalars survive the interruption
         self.logger.info(
             "Resumed session %s: %s messages, %s steps, $%.4f spent so far.",
             session_id, len(self.messages), self.n_calls, self.cost,

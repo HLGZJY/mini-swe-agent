@@ -24,3 +24,9 @@ class UserInterruption(InterruptAgentFlow):
 
 class FormatError(InterruptAgentFlow):
     """Raised when the LM's output is not in the expected format."""
+
+
+class StalledExceeded(InterruptAgentFlow):
+    """魔改 5: raised when the agent shows fake progress (no new fingerprints)
+    for too long despite escalating warnings. Deliberately NOT a LimitsExceeded
+    subclass: resource limits and stalls are distinct exit channels."""

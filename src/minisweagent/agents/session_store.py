@@ -39,7 +39,7 @@ from typing import Any
 
 logger = logging.getLogger("agent.session")
 
-_SCHEMA_VERSION = 1
+_SCHEMA_VERSION = 2
 
 _SCHEMA = f"""
 PRAGMA user_version = {_SCHEMA_VERSION};
@@ -62,7 +62,10 @@ CREATE TABLE IF NOT EXISTS sessions (
     cost_last_confirmed REAL NOT NULL DEFAULT 0.0,
     agent_type TEXT NOT NULL DEFAULT '',
     agent_version TEXT NOT NULL DEFAULT '',
-    config_snapshot TEXT NOT NULL DEFAULT '{{}}'
+    config_snapshot TEXT NOT NULL DEFAULT '{{}}',
+    stall_streak INTEGER NOT NULL DEFAULT 0,
+    stall_last_fp TEXT,
+    stall_warnings INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS messages (
@@ -123,6 +126,17 @@ class SessionStore:
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA synchronous=FULL")
         self._conn.executescript(_SCHEMA)
+        # 魔改 5: migrate v1 DBs — add stall columns if missing (idempotent via
+        # table_info, so a crash mid-migration self-heals on the next open).
+        existing = {r[1] for r in self._conn.execute("PRAGMA table_info(sessions)")}
+        for col, decl in (
+            ("stall_streak", "INTEGER NOT NULL DEFAULT 0"),
+            ("stall_last_fp", "TEXT"),
+            ("stall_warnings", "INTEGER NOT NULL DEFAULT 0"),
+        ):
+            if col not in existing:
+                self._conn.execute(f"ALTER TABLE sessions ADD COLUMN {col} {decl}")
+        self._conn.execute(f"PRAGMA user_version = {_SCHEMA_VERSION}")
         self._conn.commit()
         self.session_id: str = ""
         self._next_seq: int = 0
@@ -140,8 +154,8 @@ class SessionStore:
             "INSERT INTO sessions (session_id, created_at, updated_at, start_time_epoch,"
             " agent_type, agent_version, config_snapshot, extra_template_vars, task,"
             " cost, n_calls, n_consecutive_format_errors, compression_count, last_trigger_pos,"
-            " cost_last_confirmed)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " cost_last_confirmed, stall_streak, stall_last_fp, stall_warnings)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 session_id,
                 now,
@@ -158,6 +172,9 @@ class SessionStore:
                 int(agent_state.get("compression_count", 0)),
                 agent_state.get("last_trigger_pos"),
                 float(agent_state.get("cost_last_confirmed", 0.0)),
+                int(agent_state.get("stall_streak", 0) or 0),
+                agent_state.get("stall_last_fp"),
+                int(agent_state.get("stall_warnings", 0) or 0),
             ),
         )
         self._conn.commit()
@@ -305,7 +322,8 @@ class SessionStore:
             "UPDATE sessions SET updated_at = ?, status = ?, exit_status = ?, submission = ?, task = ?,"
             " cost = ?, n_calls = ?, n_consecutive_format_errors = ?, compression_count = ?,"
             " last_trigger_pos = ?, extra_template_vars = ?, cost_last_confirmed = ?,"
-            " start_time_epoch = ?, config_snapshot = ?"
+            " start_time_epoch = ?, config_snapshot = ?,"
+            " stall_streak = ?, stall_last_fp = ?, stall_warnings = ?"
             " WHERE session_id = ?",
             (
                 time.time(),
@@ -322,6 +340,9 @@ class SessionStore:
                 float(agent_state.get("cost_last_confirmed", 0.0)),
                 float(agent_state.get("start_time_epoch") or 0.0),
                 json.dumps(agent_state.get("config_snapshot", {}), ensure_ascii=False, default=str),
+                int(agent_state.get("stall_streak", 0) or 0),
+                agent_state.get("stall_last_fp"),
+                int(agent_state.get("stall_warnings", 0) or 0),
                 self.session_id,
             ),
         )
