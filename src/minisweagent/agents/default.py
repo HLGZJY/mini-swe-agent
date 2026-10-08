@@ -25,6 +25,7 @@ from minisweagent.agents.compression import (
     mechanical_summary,
     validate_summary,
 )
+from minisweagent.agents.session_store import SessionStore
 from minisweagent.exceptions import FormatError, InterruptAgentFlow, LimitsExceeded, TimeExceeded
 from minisweagent.models.utils.tool_registry import get_default_registry
 from minisweagent.utils.serialize import recursive_merge
@@ -68,6 +69,10 @@ class AgentConfig(BaseModel):
     default (five fixed sections, validated after generation)."""
     output_path: Path | None = None
     """Save the trajectory to this path."""
+    session_db_path: str = ""
+    """魔改 4: path to a SQLite file for session persistence (per-step event log +
+    resume support). Empty string (default) disables persistence entirely — upstream
+    behavior, byte-for-byte, and no DB file is created."""
 
 
 class DefaultAgent:
@@ -85,6 +90,61 @@ class DefaultAgent:
         self._start_time = time.time()
         self._compression_count = 0
         self._last_trigger_msg: dict | None = None
+        # 魔改 4: session persistence (off unless session_db_path is configured).
+        self._session: SessionStore | None = None
+        self.session_id: str = ""
+        if getattr(self.config, "session_db_path", ""):
+            self._session = SessionStore(self.config.session_db_path)
+
+    def _agent_type(self) -> str:
+        return f"{self.__class__.__module__}.{self.__class__.__name__}"
+
+    def _session_state(self) -> dict:
+        """Snapshot of the persistable state (the resume boundary, 魔改 4)."""
+        return {
+            "cost": self.cost,
+            "n_calls": self.n_calls,
+            "n_consecutive_format_errors": self.n_consecutive_format_errors,
+            "compression_count": self._compression_count,
+            "last_trigger_pos": self._messages_identity_pos(self._last_trigger_msg),
+            "extra_template_vars": self.extra_template_vars,
+            "cost_last_confirmed": float(getattr(self, "cost_last_confirmed", 0.0)),
+            "start_time_epoch": self._start_time,
+            "config_snapshot": self.config.model_dump(mode="json"),
+        }
+
+    def _messages_identity_pos(self, msg: dict | None) -> int | None:
+        """Position of ``msg`` in the current message list by object identity.
+
+        Mirrors the ``is``-based comparison used for the compression trigger
+        marker (default.py:209): persistence uses the same identity semantics,
+        expressed as a view position that survives a round-trip through the DB.
+        """
+        if msg is None:
+            return None
+        for i, m in enumerate(self.messages):
+            if m is msg:
+                return i
+        return None
+
+    def _persist(self, fn, *args, **kwargs) -> None:
+        """Run a SessionStore write, degrading to log-and-continue on failure.
+
+        Persistence must never kill a run: a failed write is rolled back inside
+        the store and the next write re-syncs the state cache from memory.
+        """
+        if self._session is None:
+            return
+        try:
+            fn(*args, **kwargs)
+        except Exception:
+            self.logger.error("Session persistence write failed; continuing.", exc_info=True)
+
+    def _trajectory_extras(self) -> tuple[dict, ...]:
+        """Extra dicts merged into the trajectory JSON (session id inside info)."""
+        if self._session is None or not self.session_id:
+            return ()
+        return ({"info": {"session_id": self.session_id}},)
 
     def get_template_vars(self, **kwargs) -> dict:
         return recursive_merge(
@@ -105,7 +165,12 @@ class DefaultAgent:
 
     def add_messages(self, *messages: dict) -> list[dict]:
         self.logger.debug(messages)  # set log level to debug to see
+        start_pos = len(self.messages)
         self.messages.extend(messages)
+        if self._session is not None and messages:
+            # 魔改 4: append-only event rows + state cache refresh, one transaction.
+            self._persist(self._session.append_messages, list(messages), start_pos=start_pos,
+                          agent_state=self._session_state())
         return list(messages)
 
     def handle_uncaught_exception(self, e: Exception) -> list[dict]:
@@ -127,14 +192,24 @@ class DefaultAgent:
         self.extra_template_vars |= {"task": task, **kwargs}
         self.messages = []
         self._last_trigger_msg = None
+        if self._session is not None:
+            self._persist(self._session.create_session, agent_state=self._session_state(),
+                          agent_type=self._agent_type(), agent_version=__version__)
+            self.session_id = self._session.session_id
         self.add_messages(
             self.model.format_message(role="system", content=self._render_template(self.config.system_template)),
             self.model.format_message(role="user", content=self._render_template(self.config.instance_template)),
         )
+        return self._run_loop()
+
+    def _run_loop(self) -> dict:
+        """The step loop shared by run() (fresh start) and resume() (魔改 4 restore)."""
         while True:
             try:
                 self.step()
                 self.n_consecutive_format_errors = 0  # reset on any clean step
+                if self._session is not None:
+                    self._persist(self._session.update_state, agent_state=self._session_state())
             except FormatError as e:
                 # The call was billed before parsing failed, so query() never got to charge it.
                 self.cost += e.messages[0].get("extra", {}).get("cost", 0.0)
@@ -158,10 +233,73 @@ class DefaultAgent:
                     raise
                 self.logger.error("Uncaught exception, controlled exit:\n%s", traceback.format_exc())
             finally:
-                self.save(self.config.output_path)
+                self.save(self.config.output_path, *self._trajectory_extras())
             if self.messages[-1].get("role") == "exit":
+                if self._session is not None:
+                    last_extra = self.messages[-1].get("extra", {})
+                    self._persist(
+                        self._session.finish,
+                        agent_state=self._session_state()
+                        | {
+                            "exit_status": last_extra.get("exit_status", ""),
+                            "submission": last_extra.get("submission", ""),
+                        },
+                    )
                 break
         return self.messages[-1].get("extra", {})
+
+    def resume(self, session_id: str) -> dict:
+        """魔改 4: restore a persisted session and continue the agent loop.
+
+        Restores the full decision state (messages, cost, step counters, compression
+        bookkeeping, trigger marker, template vars). Wall-clock time restarts: the
+        ``wall_time_limit`` budget applies to this continued run, not to the
+        interrupted one. If the process died between an assistant response and its
+        tool observation, the recorded actions are re-executed locally (at-least-once
+        for tools); a recorded LM response is never re-queried, hence never re-billed.
+        """
+        if self._session is None:
+            raise ValueError("resume() requires agent.session_db_path to be configured")
+        state = self._session.attach(session_id)
+        if state["status"] == "finished":
+            raise ValueError(
+                f"Session {session_id} is already finished (exit_status={state['exit_status']!r});"
+                " nothing to resume."
+            )
+        self.session_id = session_id
+        self.messages = self._session.load_messages()
+        self.cost = float(state["cost"])
+        self.n_calls = int(state["n_calls"])
+        self.n_consecutive_format_errors = int(state["n_consecutive_format_errors"])
+        self._compression_count = int(state["compression_count"])
+        self._start_time = time.time()  # wall-clock budget restarts on resume
+        self.extra_template_vars = dict(state["extra_template_vars"])
+        if hasattr(self, "cost_last_confirmed"):
+            self.cost_last_confirmed = float(state["cost_last_confirmed"])
+        pos = state["last_trigger_pos"]
+        self._last_trigger_msg = (
+            self.messages[pos] if pos is not None and 0 <= pos < len(self.messages) else None
+        )
+        self.logger.info(
+            "Resumed session %s: %s messages, %s steps, $%.4f spent so far.",
+            session_id, len(self.messages), self.n_calls, self.cost,
+        )
+        if self.messages and self.messages[-1].get("role") == "exit":
+            # Killed between the exit message and the finish() write: the run is over.
+            extra = self.messages[-1].get("extra", {})
+            self._persist(
+                self._session.finish,
+                agent_state=self._session_state()
+                | {"exit_status": extra.get("exit_status", ""), "submission": extra.get("submission", "")},
+            )
+            return extra
+        if self.messages and self.messages[-1].get("role") == "assistant":
+            actions = (self.messages[-1].get("extra") or {}).get("actions") or []
+            if actions:
+                self.logger.info("Re-executing %s dangling action(s) from the interrupted step.", len(actions))
+                self.execute_actions(self.messages[-1])
+        self._persist(self._session.update_state, agent_state=self._session_state())
+        return self._run_loop()
 
     def step(self) -> list[dict]:
         """Query the LM, execute actions."""
@@ -326,6 +464,17 @@ class DefaultAgent:
         else:
             new_messages[2]["extra"]["compression_event"]["tokens_after_estimate"] = est_after
             self._write_compression_snapshot()
+            if self._session is not None:
+                # 魔改 4: mirror the rewrite in the DB *before* touching memory — the
+                # store supersedes folded rows, shifts kept rows and inserts the
+                # event message in one transaction, so a crash mid-rewrite leaves
+                # a consistent (post-rewrite) state behind.
+                self._persist(
+                    self._session.apply_compression,
+                    cut_index=cut_index,
+                    event_message=event_message,
+                    agent_state=self._session_state(),
+                )
             self.messages[:] = new_messages
             self.logger.info(
                 "Compressed %s messages into a %s summary (event #%s).",
@@ -375,6 +524,11 @@ class DefaultAgent:
         tool exceptions) come back as observations so the model can self-correct.
         All other actions go to the environment as before.
         """
+        if self._session is not None:
+            # 魔改 4: mark the execution as in-flight *before* it runs, so a crash
+            # between "tool began" and "observation persisted" is explicit in the
+            # event log (at-least-once tool semantics on resume).
+            self._persist(self._session.record_action_started, action=action)
         if "tool" in action:
             # Structured tools run in-process, NOT in a shell: they must resolve relative
             # paths against the environment's working directory (if it exposes one).
