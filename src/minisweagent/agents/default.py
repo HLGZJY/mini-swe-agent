@@ -13,6 +13,7 @@ from jinja2 import StrictUndefined, Template
 from pydantic import BaseModel
 
 from minisweagent import Environment, Model, __version__
+from minisweagent.agents.compression import estimate_tokens, find_cut_index, last_prompt_tokens
 from minisweagent.exceptions import FormatError, InterruptAgentFlow, LimitsExceeded, TimeExceeded
 from minisweagent.models.utils.tool_registry import get_default_registry
 from minisweagent.utils.serialize import recursive_merge
@@ -40,6 +41,20 @@ class AgentConfig(BaseModel):
     log the traceback, keep the recorded exit message and stop the loop — a clean
     exit_status in the trajectory instead of a crash. Off by default: the bare raise
     is also the only channel that surfaces bugs in our own code."""
+    compression_threshold_tokens: int = 0
+    """魔改 3: fold early turns into a structured summary when the history reaches this many
+    tokens. 0 (default) disables compression entirely — upstream behavior, byte-for-byte.
+    Suggested value: model context window / 1.5, leaving headroom for the summary and
+    the kept recent turns."""
+    compression_keep_recent_turns: int = 5
+    """魔改 3: number of most-recent turns (assistant + its observations) kept verbatim
+    when compression fires."""
+    compression_chars_per_token: float = 4.0
+    """魔改 3: character-to-token ratio for the fallback estimate used when the model
+    response carries no ``usage`` (e.g. deterministic test models)."""
+    compression_summary_prompt: str = ""
+    """魔改 3: instruction for the LM-generated summary. Empty string uses the built-in
+    default (five fixed sections, validated after generation)."""
     output_path: Path | None = None
     """Save the trajectory to this path."""
 
@@ -57,6 +72,7 @@ class DefaultAgent:
         self.n_calls = 0
         self.n_consecutive_format_errors = 0
         self._start_time = time.time()
+        self._compression_count = 0
 
     def get_template_vars(self, **kwargs) -> dict:
         return recursive_merge(
@@ -156,11 +172,49 @@ class DefaultAgent:
                     "extra": {"exit_status": "TimeExceeded", "submission": ""},
                 }
             )
+        self._maybe_compress()
         self.n_calls += 1
         message = self.model.query(self.messages)
         self.cost += message.get("extra", {}).get("cost", 0.0)
         self.add_messages(message)
         return message
+
+    def _maybe_compress(self) -> None:
+        """魔改 3: check whether the history should be folded before the next model call.
+
+        Disabled entirely while ``compression_threshold_tokens <= 0``. The token signal
+        is the previous response's real ``usage.prompt_tokens`` when available (each
+        step resends the full history, so it measures the upcoming call exactly);
+        otherwise a character estimate. Commit ① only detects and logs — the actual
+        rewrite lands with the summary implementation.
+        """
+        threshold = self.config.compression_threshold_tokens
+        if threshold <= 0:
+            return
+        usage_tokens = last_prompt_tokens(self.messages)
+        if usage_tokens is not None:
+            tokens = usage_tokens
+            source = "usage"
+        else:
+            tokens = estimate_tokens(self.messages, self.config.compression_chars_per_token)
+            source = "estimate"
+        if tokens < threshold:
+            return
+        cut_index = find_cut_index(self.messages, self.config.compression_keep_recent_turns)
+        if cut_index is None:
+            self.logger.debug(
+                "Compression triggered (~%s tokens) but fewer than %s foldable turns; skipping.",
+                tokens,
+                self.config.compression_keep_recent_turns + 1,
+            )
+            return
+        self.logger.info(
+            "Compression triggered (%s=%s tokens >= threshold %s); fold point at message %s.",
+            source,
+            tokens,
+            threshold,
+            cut_index,
+        )
 
     def _execute_action(self, action: dict) -> dict:
         """Execute a single action: in-process structured tool, or environment command.
