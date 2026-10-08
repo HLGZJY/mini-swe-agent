@@ -78,6 +78,19 @@ class TestRegistryErrorClass:
         assert result["error_class"] == et.ERROR_TOOL_ERROR
         assert "kaboom" in result["output"]
 
+    def test_error_class_reaches_observation_message_extra(self):
+        """error_class must survive into the message extra (trajectory stats count it)."""
+        from minisweagent.models.utils.actions_toolcall import format_toolcall_observation_messages
+
+        outputs = [self.registry.execute_action({"tool": "boom", "args": {"x": 1}})]
+        (msg,) = format_toolcall_observation_messages(
+            actions=[{"tool": "boom", "args": {"x": 1}, "tool_call_id": "c1"}],
+            outputs=outputs,
+            observation_template="",
+        )
+        assert msg["extra"]["error_class"] == et.ERROR_TOOL_ERROR
+        assert msg["extra"]["returncode"] == 1
+
     def test_oserror_tool_exception_classified_env_unavailable(self):
         """OSError-raising tool -> env_unavailable with model guidance in exception_info."""
 

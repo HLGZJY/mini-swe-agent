@@ -61,6 +61,7 @@ def format_observation_messages(
                 "returncode": output.get("returncode"),
                 "timestamp": time.time(),
                 "exception_info": output.get("exception_info"),
+                "error_class": output.get("error_class"),
                 **output.get("extra", {}),
             },
         }
