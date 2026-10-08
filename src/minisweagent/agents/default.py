@@ -13,7 +13,18 @@ from jinja2 import StrictUndefined, Template
 from pydantic import BaseModel
 
 from minisweagent import Environment, Model, __version__
-from minisweagent.agents.compression import estimate_tokens, find_cut_index, last_prompt_tokens
+from minisweagent.agents.compression import (
+    COMPRESSION_PREAMBLE,
+    DEFAULT_SUMMARY_PROMPT,
+    build_folded_transcript,
+    content_from_persisted_response,
+    content_text,
+    estimate_tokens,
+    find_cut_index,
+    last_prompt_usage,
+    mechanical_summary,
+    validate_summary,
+)
 from minisweagent.exceptions import FormatError, InterruptAgentFlow, LimitsExceeded, TimeExceeded
 from minisweagent.models.utils.tool_registry import get_default_registry
 from minisweagent.utils.serialize import recursive_merge
@@ -73,6 +84,7 @@ class DefaultAgent:
         self.n_consecutive_format_errors = 0
         self._start_time = time.time()
         self._compression_count = 0
+        self._last_trigger_msg: dict | None = None
 
     def get_template_vars(self, **kwargs) -> dict:
         return recursive_merge(
@@ -114,6 +126,7 @@ class DefaultAgent:
         """Run step() until agent is finished. Returns dictionary with exit_status, submission keys."""
         self.extra_template_vars |= {"task": task, **kwargs}
         self.messages = []
+        self._last_trigger_msg = None
         self.add_messages(
             self.model.format_message(role="system", content=self._render_template(self.config.system_template)),
             self.model.format_message(role="user", content=self._render_template(self.config.instance_template)),
@@ -185,18 +198,23 @@ class DefaultAgent:
         Disabled entirely while ``compression_threshold_tokens <= 0``. The token signal
         is the previous response's real ``usage.prompt_tokens`` when available (each
         step resends the full history, so it measures the upcoming call exactly);
-        otherwise a character estimate. Commit ① only detects and logs — the actual
-        rewrite lands with the summary implementation.
+        otherwise a character estimate.
         """
         threshold = self.config.compression_threshold_tokens
         if threshold <= 0:
             return
-        usage_tokens = last_prompt_tokens(self.messages)
-        if usage_tokens is not None:
-            tokens = usage_tokens
+        usage = last_prompt_usage(self.messages)
+        if usage is not None:
+            usage_index, tokens = usage
+            if self.messages[usage_index] is self._last_trigger_msg:
+                # This usage signal was already consumed by a previous compression
+                # attempt (kept turns still carry it after a rewrite) — waiting for a
+                # fresh assistant response prevents a re-trigger loop.
+                return
             source = "usage"
         else:
             tokens = estimate_tokens(self.messages, self.config.compression_chars_per_token)
+            usage_index = None
             source = "estimate"
         if tokens < threshold:
             return
@@ -209,12 +227,112 @@ class DefaultAgent:
             )
             return
         self.logger.info(
-            "Compression triggered (%s=%s tokens >= threshold %s); fold point at message %s.",
+            "Compression triggered (%s=%s tokens >= threshold %s); folding messages [2:%s).",
             source,
             tokens,
             threshold,
             cut_index,
         )
+        trigger_msg = self.messages[usage_index] if usage_index is not None else None
+        self._compress(cut_index, tokens_before=tokens, trigger_source=source, trigger_msg=trigger_msg)
+
+    def _generate_summary(self, transcript: str) -> tuple[str | None, float]:
+        """Ask the model for a structured summary of the folded transcript.
+
+        Returns ``(summary_text, cost)``; ``summary_text`` is None when the LM path
+        failed or produced an invalid summary — the caller then falls back to the
+        mechanical summary, so a broken summary path can never kill the run.
+
+        Cost is always accounted into ``self.cost`` (the summary call bypasses the
+        agent loop's own accounting, which only sees step queries).
+        """
+        instruction = self.config.compression_summary_prompt or DEFAULT_SUMMARY_PROMPT
+        content = f"{instruction}\n\n<folded_history>\n{transcript}\n</folded_history>"
+        try:
+            message = self.model.query([{"role": "user", "content": content}])
+        except FormatError as e:
+            # Toolcall-backed models raise FormatError on any text-only response, and
+            # the error message carries only the rendered error template. The raw
+            # response dump (with the actual summary text) is persisted on the error's
+            # message extra — salvage it from there.
+            self.cost += (e.messages[0].get("extra") or {}).get("cost", 0.0)
+            response = (e.messages[0].get("extra") or {}).get("response")
+            text = content_from_persisted_response(response)
+            if text is None:
+                self.logger.warning(
+                    "Summary call hit FormatError without a recoverable response; using mechanical summary."
+                )
+                return None, 0.0
+        except Exception:
+            self.logger.warning("Summary call failed; using mechanical summary.", exc_info=True)
+            return None, 0.0
+        cost = (message.get("extra") or {}).get("cost", 0.0)
+        self.cost += cost
+        text = content_text(message.get("content"))
+        if not validate_summary(text):
+            self.logger.warning("LM summary failed five-section validation; using mechanical summary.")
+            return None, cost
+        return text, cost
+
+    def _compress(self, cut_index: int, *, tokens_before: int, trigger_source: str, trigger_msg: dict | None) -> None:
+        """Fold ``messages[2:cut_index]`` into a summary message and rewrite the history in place.
+
+        In-place rewriting keeps the upstream invariant that ``self.messages`` is the
+        single source of truth (exit checks, serialization, template vars all read it).
+        Trajectory completeness is preserved by two mechanisms: a compression event
+        message records what was folded, and (commit ③) a snapshot of the pre-compression
+        history is written next to the trajectory file.
+        """
+        self._compression_count += 1
+        transcript = build_folded_transcript(self.messages, cut_index)
+        summary, summary_cost = self._generate_summary(transcript)
+        if summary is None:
+            summary = mechanical_summary(self.messages, cut_index, task=str(self.extra_template_vars.get("task", "")))
+            summary_source = "mechanical"
+        else:
+            summary_source = "lm"
+
+        event_message = {
+            "role": "user",
+            "content": COMPRESSION_PREAMBLE + summary,
+            "extra": {
+                "compression_event": {
+                    "index": self._compression_count,
+                    "trigger": {"source": trigger_source, "tokens_before": tokens_before},
+                    "folded_message_count": cut_index - 2,
+                    "kept_messages": len(self.messages) - cut_index,
+                    "summary_source": summary_source,
+                    "summary_cost": summary_cost,
+                },
+                "timestamp": time.time(),
+            },
+        }
+        new_messages = self.messages[:2] + [event_message] + self.messages[cut_index:]
+
+        # Safety net: never let a compression *grow* the history (pathological cases,
+        # e.g. a mechanical summary longer than what it replaces). Compared on the same
+        # estimation basis so mixed real-usage/estimate scales don't produce a false alarm.
+        est_before = estimate_tokens(self.messages, self.config.compression_chars_per_token)
+        est_after = estimate_tokens(new_messages, self.config.compression_chars_per_token)
+        if est_after >= est_before:
+            self._compression_count -= 1
+            self.logger.warning(
+                "Compression would not shrink history (%s -> %s estimated tokens); skipping rewrite.",
+                est_before,
+                est_after,
+            )
+        else:
+            new_messages[2]["extra"]["compression_event"]["tokens_after_estimate"] = est_after
+            self.messages[:] = new_messages
+            self.logger.info(
+                "Compressed %s messages into a %s summary (event #%s).",
+                cut_index - 2,
+                summary_source,
+                self._compression_count,
+            )
+        # Either way the trigger signal is spent: the summary call was already paid for,
+        # and retrying it every step against an unwritable history would just burn tokens.
+        self._last_trigger_msg = trigger_msg
 
     def _execute_action(self, action: dict) -> dict:
         """Execute a single action: in-process structured tool, or environment command.
