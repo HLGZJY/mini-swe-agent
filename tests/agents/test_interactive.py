@@ -137,7 +137,7 @@ def test_successful_completion_with_confirmation(model_factory):
         agent = InteractiveAgent(
             model=factory(
                 [
-                    ("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'completed'"}]),
+                    ("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'completed'"}]),
                 ]
             ),
             env=LocalEnvironment(),
@@ -164,7 +164,7 @@ def test_action_rejection_and_recovery(model_factory):
             model=factory(
                 [
                     ("First try", [{"command": "echo 'first attempt'"}]),
-                    ("Second try", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'recovered'"}]),
+                    ("Second try", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'recovered'"}]),
                 ]
             ),
             env=LocalEnvironment(),
@@ -193,7 +193,10 @@ def test_yolo_mode_activation(model_factory):
         agent = InteractiveAgent(
             model=factory(
                 [
-                    ("Test command", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'yolo works'"}]),
+                    (
+                        "Test command",
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'yolo works'"}],
+                    ),
                 ]
             ),
             env=LocalEnvironment(),
@@ -220,7 +223,10 @@ def test_help_command(model_factory):
             agent = InteractiveAgent(
                 model=factory(
                     [
-                        ("Test help", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'help shown'"}]),
+                        (
+                            "Test help",
+                            [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'help shown'"}],
+                        ),
                     ]
                 ),
                 env=LocalEnvironment(),
@@ -244,7 +250,7 @@ def test_whitelisted_actions_skip_confirmation(model_factory):
                 [
                     (
                         "Whitelisted",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'no confirmation needed'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'no confirmation needed'"}],
                     ),
                 ]
             ),
@@ -270,7 +276,7 @@ def _test_interruption_helper(
                 ("Initial step", [{"command": "echo 'will be interrupted'"}]),
                 (
                     "Recovery",
-                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'recovered from interrupt'"}],
+                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'recovered from interrupt'"}],
                 ),
             ]
         ),
@@ -345,7 +351,7 @@ def test_multiple_confirmations_and_commands(model_factory):
                     ("First action", [{"command": "echo 'first'"}]),
                     (
                         "Second action",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'complex flow completed'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'complex flow completed'"}],
                     ),
                 ]
             ),
@@ -369,7 +375,7 @@ def test_non_whitelisted_action_requires_confirmation(model_factory):
                 [
                     (
                         "Non-whitelisted",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'confirmed'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'confirmed'"}],
                     ),
                 ]
             ),
@@ -394,7 +400,7 @@ def test_human_mode_basic_functionality(model_factory):
     with mock_prompts(
         [
             "echo 'user command'",  # User enters shell command
-            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'human mode works'",  # User enters final command
+            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'human mode works'",  # User enters final command
             "",  # No new task when agent wants to finish
         ]
     ):
@@ -429,7 +435,7 @@ def test_human_mode_switch_to_yolo(model_factory):
                 [
                     (
                         "LM action",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'switched to yolo'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'switched to yolo'"}],
                     ),
                 ]
             ),
@@ -462,7 +468,7 @@ def test_human_mode_switch_to_confirm(model_factory):
                 [
                     (
                         "LM action",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'switched to confirm'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'switched to confirm'"}],
                     ),
                 ]
             ),
@@ -486,7 +492,7 @@ def test_confirmation_mode_switch_to_human_with_rejection(model_factory):
     with mock_prompts(
         [
             "/u",  # Switch to human mode and reject action
-            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'human command after rejection'",  # Human command
+            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'human command after rejection'",  # Human command
             "",  # No new task when agent wants to finish
         ]
     ):
@@ -527,7 +533,7 @@ def test_confirmation_mode_switch_to_yolo_and_continue(model_factory):
                 [
                     (
                         "LM action",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'switched and continued'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'switched and continued'"}],
                     ),
                 ]
             ),
@@ -553,7 +559,7 @@ def test_mode_switch_during_keyboard_interrupt(model_factory):
                 ("Initial step", [{"command": "echo 'will be interrupted'"}]),
                 (
                     "Recovery",
-                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'recovered after mode switch'"}],
+                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'recovered after mode switch'"}],
                 ),
             ]
         ),
@@ -607,7 +613,7 @@ def test_already_in_mode_behavior(model_factory):
                 [
                     (
                         "Test action",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'already in mode'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'already in mode'"}],
                     ),
                 ]
             ),
@@ -640,7 +646,7 @@ def test_all_mode_transitions_yolo_to_others(model_factory):
                     ("First action", [{"command": "echo 'yolo action'"}]),
                     (
                         "Second action",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'confirm action'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'confirm action'"}],
                     ),
                 ]
             ),
@@ -677,7 +683,7 @@ def test_all_mode_transitions_confirm_to_human(model_factory):
     with mock_prompts(
         [
             "/u",  # Switch from confirm to human (rejecting action)
-            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'human command'",  # User enters command in human mode
+            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'human command'",  # User enters command in human mode
             "",  # No new task when agent wants to finish
         ]
     ):
@@ -713,7 +719,7 @@ def test_help_command_from_different_contexts(model_factory):
                     [
                         (
                             "Test action",
-                            [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'help works'"}],
+                            [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'help works'"}],
                         ),
                     ]
                 ),
@@ -738,7 +744,7 @@ def test_help_command_from_human_mode(model_factory):
     with mock_prompts(
         [
             "/h",  # Show help in human mode
-            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'help in human mode'",  # User command after help
+            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'help in human mode'",  # User command after help
             "",  # No new task when agent wants to finish
         ]
     ):
@@ -768,7 +774,7 @@ def test_complex_mode_switching_sequence(model_factory):
             [
                 ("Action 1", [{"command": "echo 'action1'"}]),
                 ("Action 2", [{"command": "echo 'action2'"}]),
-                ("Action 3", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'final action'"}]),
+                ("Action 3", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'final action'"}]),
             ]
         ),
         env=LocalEnvironment(),
@@ -821,7 +827,7 @@ def test_limits_exceeded_with_user_continuation(model_factory):
                     "Final step",
                     [
                         {
-                            "command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'completed after limit increase'"
+                            "command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'completed after limit increase'"
                         }
                     ],
                 ),
@@ -866,7 +872,7 @@ def test_limits_exceeded_multiple_times_with_continuation(model_factory):
                     "Final",
                     [
                         {
-                            "command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'completed after multiple increases'"
+                            "command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'completed after multiple increases'"
                         }
                     ],
                 ),
@@ -963,11 +969,11 @@ def test_continue_after_completion_with_new_task(model_factory):
                 [
                     (
                         "First task",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'first task completed'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'first task completed'"}],
                     ),
                     (
                         "Second task",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'new task completed'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'new task completed'"}],
                     ),
                 ]
             ),
@@ -1000,7 +1006,7 @@ def test_continue_after_completion_without_new_task(model_factory):
                 [
                     (
                         "Task completion",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'original task completed'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'original task completed'"}],
                     ),
                 ]
             ),
@@ -1033,9 +1039,12 @@ def test_continue_after_completion_multiple_cycles(model_factory):
         agent = InteractiveAgent(
             model=factory(
                 [
-                    ("First", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'first completed'"}]),
-                    ("Second", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'second completed'"}]),
-                    ("Third", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'third completed'"}]),
+                    ("First", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'first completed'"}]),
+                    (
+                        "Second",
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'second completed'"}],
+                    ),
+                    ("Third", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'third completed'"}]),
                 ]
             ),
             env=LocalEnvironment(),
@@ -1065,10 +1074,10 @@ def test_continue_after_completion_in_yolo_mode(model_factory):
         agent = InteractiveAgent(
             model=factory(
                 [
-                    ("First", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'first completed'"}]),
+                    ("First", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'first completed'"}]),
                     (
                         "Second",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'second task completed'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'second task completed'"}],
                     ),
                 ]
             ),
@@ -1096,7 +1105,7 @@ def test_confirm_exit_enabled_asks_for_confirmation(model_factory):
         agent = InteractiveAgent(
             model=factory(
                 [
-                    ("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'completed'"}]),
+                    ("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'completed'"}]),
                 ]
             ),
             env=LocalEnvironment(),
@@ -1119,7 +1128,7 @@ def test_confirm_exit_disabled_exits_immediately(model_factory):
         agent = InteractiveAgent(
             model=factory(
                 [
-                    ("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'completed'"}]),
+                    ("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'completed'"}]),
                 ]
             ),
             env=LocalEnvironment(),
@@ -1149,10 +1158,10 @@ def test_confirm_exit_with_new_task_continues_execution(model_factory):
         agent = InteractiveAgent(
             model=factory(
                 [
-                    ("First task", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'first done'"}]),
+                    ("First task", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'first done'"}]),
                     (
                         "Additional task",
-                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'additional done'"}],
+                        [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'additional done'"}],
                     ),
                 ]
             ),
@@ -1216,14 +1225,14 @@ def test_submission_help_then_human_mode(model_factory):
             "/h",  # At submission prompt: show help, reprompt
             "/u",  # At submission prompt: switch to human mode
             "echo 'test'",  # In human mode: run command
-            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'",  # Submit from human mode
+            "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'done'",  # Submit from human mode
             "",  # Confirm exit
         ]
     ):
         with patch("minisweagent.agents.interactive.console.print") as mock_print:
             agent = InteractiveAgent(
                 model=factory(
-                    [("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'initial'"}])],
+                    [("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'initial'"}])],
                 ),
                 env=LocalEnvironment(),
                 **{**config, "mode": "yolo"},
@@ -1245,7 +1254,7 @@ def test_submission_enter_quits(model_factory):
     with mock_prompts([""]):  # At submission prompt: Enter to quit
         agent = InteractiveAgent(
             model=factory(
-                [("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'completed'"}])],
+                [("Finishing", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'completed'"}])],
             ),
             env=LocalEnvironment(),
             **{**config, "mode": "yolo"},

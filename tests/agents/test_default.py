@@ -137,7 +137,7 @@ def test_successful_completion(model_factory):
                 ("I'll echo a message", [{"command": "echo 'hello world'"}]),
                 (
                     "Now finishing",
-                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'Task completed successfully'"}],
+                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'Task completed successfully'"}],
                 ),
             ]
         ),
@@ -190,7 +190,7 @@ def test_timeout_handling(model_factory):
         model=factory(
             [
                 ("Long sleep", [{"command": "sleep 5"}]),  # This will timeout
-                ("Quick finish", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'recovered'"}]),
+                ("Quick finish", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'recovered'"}]),
             ]
         ),
         env=LocalEnvironment(timeout=1),  # Very short timeout
@@ -215,7 +215,7 @@ def test_timeout_captures_partial_output(model_factory):
         model=factory(
             [
                 ("Output then sleep", [{"command": calculation_command}]),
-                ("Quick finish", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'recovered'"}]),
+                ("Quick finish", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'recovered'"}]),
             ]
         ),
         env=LocalEnvironment(timeout=1),
@@ -240,7 +240,7 @@ def test_multiple_steps_before_completion(model_factory):
                 ("Step 3", [{"command": "echo 'third'"}]),
                 (
                     "Final step",
-                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'completed all steps'"}],
+                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'completed all steps'"}],
                 ),
             ]
         ),
@@ -262,7 +262,7 @@ def test_custom_config(model_factory):
             [
                 (
                     "Test response",
-                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'custom config works'"}],
+                    [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'custom config works'"}],
                 )
             ]
         ),
@@ -314,7 +314,7 @@ def test_messages_include_timestamps(model_factory):
         model=factory(
             [
                 ("Response 1", [{"command": "echo 'test1'"}]),
-                ("Response 2", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'"}]),
+                ("Response 2", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'done'"}]),
             ]
         ),
         env=LocalEnvironment(),
@@ -338,7 +338,7 @@ def test_message_history_tracking(model_factory):
         model=factory(
             [
                 ("Response 1", [{"command": "echo 'test1'"}]),
-                ("Response 2", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'"}]),
+                ("Response 2", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'done'"}]),
             ]
         ),
         env=LocalEnvironment(),
@@ -393,7 +393,7 @@ def test_observations_captured(model_factory):
             [
                 ("Step 1", [{"command": "echo 'first'"}]),
                 ("Step 2", [{"command": "echo 'second'"}]),
-                ("Final", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'"}]),
+                ("Final", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'done'"}]),
             ]
         ),
         env=LocalEnvironment(),
@@ -447,7 +447,7 @@ def test_empty_actions_handling(model_factory):
         model=factory(
             [
                 ("No actions here", []),  # Empty actions list
-                ("Now with action", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho 'done'"}]),
+                ("Now with action", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo 'done'"}]),
             ]
         ),
         env=LocalEnvironment(),
@@ -498,7 +498,7 @@ def test_format_error_counter_resets_on_success(toolcall_config):
     errors don't accumulate to the termination threshold."""
     good = make_tc_model([("listing", [{"command": "echo hello"}])]).config.outputs[0]
     submit = make_tc_model(
-        [("done", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\necho ok"}])]
+        [("done", [{"command": "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT' && echo ok"}])]
     ).config.outputs[0]
     # error, success (reset), error, submit -> never 2 in a row, so it must NOT terminate early.
     outputs = [{"_format_error": True}, good, {"_format_error": True}, submit]

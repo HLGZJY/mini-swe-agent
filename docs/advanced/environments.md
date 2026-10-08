@@ -16,6 +16,21 @@ You can specify the environment class with the `--environment-class` flag or the
 
 * **`local`** ([`LocalEnvironment`](../reference/environments/local.md)). Executes commands directly on the host machine using `subprocess.run`. No isolation. Directly works in your current python environment.
 
+    !!! note "Shell selection"
+        The agent's prompts assume POSIX shell semantics. On Windows, `subprocess` would
+        hand commands to `cmd.exe`, where `echo $VAR` does not expand and a newline is not
+        a command separator. `LocalEnvironment` therefore resolves a shell via the
+        `environment.shell` config key:
+
+        - `auto` (default): use `bash` if one is actually executable, otherwise fall back to
+          the platform's default shell. Detection *executes* `bash -c "echo ok"` rather than
+          trusting `PATH`, so an unusable `bash` (e.g. a WSL one with no mounted distro)
+          is skipped.
+        - `bash` / `cmd` / `powershell`: force a specific interpreter.
+
+        With `auto` on Windows this normally resolves to Git Bash. The resolved shell is
+        recorded under `info.shell` in the saved trajectory.
+
 * **`docker`** ([`DockerEnvironment`](../reference/environments/docker.md)). Executes commands with `docker exec`.
 
 * **`singularity`** ([`SingularityEnvironment`](../reference/environments/singularity.md)) - Executes commands in Singularity/Apptainer containers. Good alternative to Docker in HPC environments where Docker is not available.
