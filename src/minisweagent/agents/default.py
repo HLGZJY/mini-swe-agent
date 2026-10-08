@@ -280,8 +280,8 @@ class DefaultAgent:
         In-place rewriting keeps the upstream invariant that ``self.messages`` is the
         single source of truth (exit checks, serialization, template vars all read it).
         Trajectory completeness is preserved by two mechanisms: a compression event
-        message records what was folded, and (commit ③) a snapshot of the pre-compression
-        history is written next to the trajectory file.
+        message records what was folded, and a snapshot of the pre-compression history
+        is written next to the trajectory file before the rewrite.
         """
         self._compression_count += 1
         transcript = build_folded_transcript(self.messages, cut_index)
@@ -323,6 +323,7 @@ class DefaultAgent:
             )
         else:
             new_messages[2]["extra"]["compression_event"]["tokens_after_estimate"] = est_after
+            self._write_compression_snapshot()
             self.messages[:] = new_messages
             self.logger.info(
                 "Compressed %s messages into a %s summary (event #%s).",
@@ -333,6 +334,36 @@ class DefaultAgent:
         # Either way the trigger signal is spent: the summary call was already paid for,
         # and retrying it every step against an unwritable history would just burn tokens.
         self._last_trigger_msg = trigger_msg
+
+    def _write_compression_snapshot(self) -> None:
+        """Preserve the full pre-compression history next to the trajectory file.
+
+        The trajectory is rewritten in place (messages-as-state) and ``save()``
+        overwrites ``output_path`` on every step, so without this snapshot the
+        original history would exist nowhere. Ablations read the real per-step
+        ``prompt_tokens`` from these snapshot files. A snapshot failure is logged
+        and swallowed: it must never kill the run.
+        """
+        if self.config.output_path is None:
+            return
+        path = Path(f"{self.config.output_path}.pre-compression-{self._compression_count}.json")
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps(
+                    {
+                        "snapshot_format": "mini-swe-agent-compression-snapshot-1.0",
+                        "compression_index": self._compression_count,
+                        "snapshot_time": time.time(),
+                        "messages": self.messages,
+                    },
+                    indent=2,
+                    default=str,
+                )
+            )
+            self.logger.info("Pre-compression snapshot written to %s", path)
+        except OSError:
+            self.logger.warning("Failed to write pre-compression snapshot to %s; continuing.", path, exc_info=True)
 
     def _execute_action(self, action: dict) -> dict:
         """Execute a single action: in-process structured tool, or environment command.
