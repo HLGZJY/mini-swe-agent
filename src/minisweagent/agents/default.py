@@ -255,24 +255,26 @@ class DefaultAgent:
             # the error message carries only the rendered error template. The raw
             # response dump (with the actual summary text) is persisted on the error's
             # message extra — salvage it from there.
-            self.cost += (e.messages[0].get("extra") or {}).get("cost", 0.0)
-            response = (e.messages[0].get("extra") or {}).get("response")
-            text = content_from_persisted_response(response)
+            error_extra = e.messages[0].get("extra") or {}
+            summary_cost = error_extra.get("cost", 0.0)
+            self.cost += summary_cost
+            text = content_from_persisted_response(error_extra.get("response"))
             if text is None:
                 self.logger.warning(
                     "Summary call hit FormatError without a recoverable response; using mechanical summary."
                 )
-                return None, 0.0
+                return None, summary_cost
         except Exception:
             self.logger.warning("Summary call failed; using mechanical summary.", exc_info=True)
             return None, 0.0
-        cost = (message.get("extra") or {}).get("cost", 0.0)
-        self.cost += cost
-        text = content_text(message.get("content"))
+        else:
+            summary_cost = (message.get("extra") or {}).get("cost", 0.0)
+            self.cost += summary_cost
+            text = content_text(message.get("content"))
         if not validate_summary(text):
             self.logger.warning("LM summary failed five-section validation; using mechanical summary.")
-            return None, cost
-        return text, cost
+            return None, summary_cost
+        return text, summary_cost
 
     def _compress(self, cut_index: int, *, tokens_before: int, trigger_source: str, trigger_msg: dict | None) -> None:
         """Fold ``messages[2:cut_index]`` into a summary message and rewrite the history in place.
