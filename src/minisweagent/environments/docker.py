@@ -8,8 +8,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from minisweagent.exceptions import Submitted
 from minisweagent.utils.serialize import recursive_merge
+from minisweagent.utils.submission import check_finished
 
 
 class DockerEnvironmentConfig(BaseModel):
@@ -139,16 +139,7 @@ class DockerEnvironment:
 
     def _check_finished(self, output: dict):
         """Raises Submitted if the output indicates task completion."""
-        lines = output.get("output", "").lstrip().splitlines(keepends=True)
-        if lines and lines[0].strip() == "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT" and output["returncode"] == 0:
-            submission = "".join(lines[1:])
-            raise Submitted(
-                {
-                    "role": "exit",
-                    "content": submission,
-                    "extra": {"exit_status": "Submitted", "submission": submission},
-                }
-            )
+        check_finished(output)
 
     def cleanup(self):
         """Stop and remove the Docker container."""
