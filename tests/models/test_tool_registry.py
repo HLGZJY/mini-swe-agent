@@ -121,6 +121,31 @@ class TestExecuteAction:
         assert result["returncode"] == 1
         assert "unknown or non-executable" in result["output"]
 
+    def test_base_dir_resolves_relative_paths(self, tmp_path):
+        """In-process tools must operate on the environment's working directory, not the
+        agent process's cwd — relative paths resolve against base_dir (real-task regression)."""
+        (tmp_path / "sub").mkdir()
+        (tmp_path / "sub" / "note.txt").write_text("found it", encoding="utf-8")
+        result = get_default_registry().execute_action(
+            {"tool": "read_file", "args": {"path": "sub/note.txt"}}, base_dir=str(tmp_path)
+        )
+        assert result["returncode"] == 0
+        assert "found it" in result["output"]
+
+    def test_base_dir_leaves_absolute_paths_alone(self, tmp_path):
+        f = tmp_path / "a.txt"
+        f.write_text("x", encoding="utf-8")
+        result = get_default_registry().execute_action({"tool": "read_file", "args": {"path": str(f)}}, base_dir=".")
+        assert result["returncode"] == 0
+
+    def test_base_dir_resolves_grep_path(self, tmp_path):
+        (tmp_path / "code.py").write_text("RETRY = 7\n", encoding="utf-8")
+        result = get_default_registry().execute_action(
+            {"tool": "grep", "args": {"pattern": "RETRY", "path": "."}}, base_dir=str(tmp_path)
+        )
+        assert result["returncode"] == 0
+        assert "RETRY = 7" in result["output"]
+
 
 class TestParseIntegration:
     def test_structured_tool_call_parsed_to_tool_action(self):

@@ -34,6 +34,11 @@ class ToolSpec:
     execute: Callable[[BaseModel], str] | None = None
     """None = the tool is executed by the agent's environment (e.g. bash in a shell).
     Otherwise: called with the validated args model instance, returns the observation text."""
+    path_fields: tuple[str, ...] = ()
+    """Names of args fields holding filesystem paths. When ``base_dir`` is passed to
+    :meth:`ToolRegistry.execute_action`, relative values in these fields are resolved
+    against it — in-process tools must operate on the same directory as the agent's
+    environment, whose working directory the tool call knows nothing about otherwise."""
 
 
 def _clean_schema(schema: dict) -> dict:
@@ -96,8 +101,11 @@ class ToolRegistry:
             for s in self._specs(names)
         ]
 
-    def execute_action(self, action: dict) -> dict:
+    def execute_action(self, action: dict, *, base_dir: str | None = None) -> dict:
         """Execute a structured tool action ``{"tool": name, "args": {...}}``.
+
+        ``base_dir`` is the working directory of the agent's environment; relative
+        values in the tool's ``path_fields`` are resolved against it before validation.
 
         Returns an observation dict shaped like ``env.execute()`` outputs
         (``{"output": str, "returncode": int, "exception_info": str | None}``) so the
@@ -113,8 +121,14 @@ class ToolRegistry:
                 "returncode": 1,
                 "exception_info": "tool dispatch failed; action was NOT executed",
             }
+        args = dict(action.get("args") or {})
+        if base_dir:
+            for field_name in spec.path_fields:
+                value = args.get(field_name)
+                if isinstance(value, str) and value and not Path(value).is_absolute():
+                    args[field_name] = str(Path(base_dir) / value)
         try:
-            validated = spec.args_model.model_validate(action.get("args") or {})
+            validated = spec.args_model.model_validate(args)
         except ValidationError as e:
             expected = json.dumps(_clean_schema(spec.args_model.model_json_schema()), ensure_ascii=False)
             return {
@@ -235,11 +249,16 @@ _DEFAULT_REGISTRY.register(
         description="Read a text file, with optional 1-based line window",
         args_model=ReadFileArgs,
         execute=_read_file,
+        path_fields=("path",),
     )
 )
 _DEFAULT_REGISTRY.register(
     ToolSpec(
-        name="grep", description="Search file contents with a regular expression", args_model=GrepArgs, execute=_grep
+        name="grep",
+        description="Search file contents with a regular expression",
+        args_model=GrepArgs,
+        execute=_grep,
+        path_fields=("path",),
     )
 )
 _DEFAULT_REGISTRY.register(
@@ -248,6 +267,7 @@ _DEFAULT_REGISTRY.register(
         description="List a directory's entries with types and sizes",
         args_model=ListDirArgs,
         execute=_list_dir,
+        path_fields=("path",),
     )
 )
 

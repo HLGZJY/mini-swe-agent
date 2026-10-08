@@ -161,7 +161,9 @@ class DefaultAgent:
         All other actions go to the environment as before.
         """
         if "tool" in action:
-            return get_default_registry().execute_action(action)
+            # Structured tools run in-process, NOT in a shell: they must resolve relative
+            # paths against the environment's working directory (if it exposes one).
+            return get_default_registry().execute_action(action, base_dir=getattr(self.env, "cwd", None))
         return self.env.execute(action)
 
     def execute_actions(self, message: dict) -> list[dict]:

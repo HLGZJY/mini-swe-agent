@@ -75,10 +75,19 @@ class LocalEnvironment:
         else:
             logger.info("LocalEnvironment is using the platform's default shell")
 
+    @property
+    def cwd(self) -> str:
+        """The working directory that in-process tool calls should resolve relative paths against.
+
+        Mirrors what :meth:`execute` uses for shell commands, so structured tools
+        (which run in the agent process, not in a shell) operate on the same directory.
+        """
+        return self.config.cwd or os.getcwd()
+
     def execute(self, action: dict, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
         """Execute a command in the local environment and return the result as a dict."""
         command = action.get("command", "")
-        cwd = cwd or self.config.cwd or os.getcwd()
+        cwd = cwd or self.cwd
         try:
             result = _run(
                 command,
