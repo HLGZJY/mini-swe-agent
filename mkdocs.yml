@@ -84,6 +84,7 @@ nav:
       - "v2 migration guide": advanced/v2_migration.md
     - "FAQ": faq.md
     - "Contributing": contributing.md
+    - "Fork modifications (zh)": MODIFICATIONS.md
   - API Reference:
     - "reference/index.md"
     - Agents:
