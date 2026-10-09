@@ -32,11 +32,11 @@ VERSIONS: dict[str, dict] = {
     },
     "v3_compress": {
         "model": {"tools": TOOLS_ALL},
-        "agent": {"compression_threshold_tokens": 24000},
+        "agent": {"compression_threshold_tokens": 8000},
     },
     "v4_stall": {
         "model": {"tools": TOOLS_ALL},
-        "agent": {"compression_threshold_tokens": 24000, "stall_window": 3, "stall_max_warnings": 2},
+        "agent": {"compression_threshold_tokens": 8000, "stall_window": 3, "stall_max_warnings": 2},
     },
 }
 

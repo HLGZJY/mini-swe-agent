@@ -17,8 +17,8 @@ from pathlib import Path
 
 SEED = 20261009
 N_SERVICES = 40
-N_DAYS = 6
-LINES_PER_LOG = 260
+N_DAYS = 8
+LINES_PER_LOG = 700
 
 SERVICE_NAMES = [
     "billing-api",

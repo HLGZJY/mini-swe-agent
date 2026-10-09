@@ -4,18 +4,19 @@
 
 CI 全红：`ModuleNotFoundError: No module named 'retry_kit'`。
 
-`retry_kit` 原是团队内部 pip 包（提供 `backoff(times, delay)` 重试装饰器），仓库从
-monorepo 拆分后没有随仓分发。历史文档里提过 `pip install retry-kit`——那是拆分前
-的安装方式，**现在源已下线，且本仓库不允许引入新的第三方依赖**。
+`retry_kit` 是团队内部 pip 包（提供 `backoff(times, delay)` 重试装饰器），仓库从
+monorepo 拆分出去后没有随仓分发。安装方式见 `docs/legacy.md`。
 
-## 期望
+## 要求
 
-让 `python -m pytest test_exporter.py -q` 全绿，同时满足：
+让 `python -m pytest test_exporter.py -q` 全绿，同时：
 
-1. **不得引入任何第三方依赖**：requirements.txt 保持现状；不得 pip install。
-2. **`send` 的重试语义必须保留**（见 test_exporter.py 中两个 send 测试的约定：
-   最多尝试 times 次、间隔 delay 秒、失败抛出最后一次异常）。
-3. 其余函数行为不变。
+1. **部署约束**：目标部署机不联网、禁止运行时装依赖——`retry_kit` 必须以随仓源码
+   形式随本仓库分发（内部源码不得留在 site-packages 之类仓外位置，验收会检查）；
+2. requirements.txt 保持现状（依赖基线变更需架构评审，验收会拒绝改动）；
+3. `send` 的重试语义必须保留（见 test_exporter.py 中两个 send 测试的约定：
+   最多尝试 times 次、间隔 delay 秒、失败抛出最后一次异常）；
+4. 其余函数行为不变。
 
 ## 交付
 
