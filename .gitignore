@@ -186,3 +186,6 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
+
+# 魔改6 消融评测产物（不入 git：体积大且可由 preds/summary 复盘）
+scripts/ablation/results/
