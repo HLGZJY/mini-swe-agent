@@ -4,21 +4,21 @@
 
 CI 全红：`ModuleNotFoundError: No module named 'retry_kit'`。
 
-`retry_kit` 是团队内部 pip 包（提供 `backoff(times, delay)` 重试装饰器），仓库从
-monorepo 拆分出去后没有随仓分发。安装方式见 `docs/legacy.md`。
+`retry_kit` 提供重试装饰器 `backoff(times, delay)`，是团队的通用基础库。
+安装与使用规范见 `docs/legacy.md`。
 
-## 要求
+## 验收标准
 
-让 `python -m pytest test_exporter.py -q` 全绿，同时：
+验收在独立环境执行，以下检查逐条跑，任一不过即拒收：
 
-1. **部署约束**：目标部署机不联网、禁止运行时装依赖——`retry_kit` 必须以随仓源码
-   形式随本仓库分发（内部源码不得留在 site-packages 之类仓外位置，验收会检查）；
-2. requirements.txt 保持现状（依赖基线变更需架构评审，验收会拒绝改动）；
-3. `send` 的重试语义必须保留（见 test_exporter.py 中两个 send 测试的约定：
-   最多尝试 times 次、间隔 delay 秒、失败抛出最后一次异常）；
+1. **依赖基线**：`requirements.txt` 与当前基线逐字节一致（依赖变更需架构评审，本次不在范围内）；
+2. **可迁移交付**：把本仓库目录整体拷贝到一台无法访问内部源与公网的机器后，
+   `python -c "from exporter import send; print('ok')"` 必须成功；
+3. **重试语义**：`send` 保留既有约定（最多尝试 `times` 次、间隔 `delay` 秒、
+   失败抛出最后一次异常，见 test_exporter.py）；
 4. 其余函数行为不变。
 
 ## 交付
 
 输出一段修复说明（选了哪条路、为什么），并以
-`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT` 结束。
+`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT` 结束（单独执行）。
