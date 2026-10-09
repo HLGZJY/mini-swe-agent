@@ -35,6 +35,10 @@ ALL_TASKS = [
     "r4_phone_normalize",
     "r5_lru_recency",
     "r6_token_bucket",
+    "d1_offline_fxapi",
+    "d2_binary_sdk_only",
+    "l1_long_slowtrace",
+    "l2_long_teamrollup",
 ]
 
 

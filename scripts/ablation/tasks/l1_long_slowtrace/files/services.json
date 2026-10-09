@@ -1,0 +1,386 @@
+[
+ {
+  "svc_id": "LS_000",
+  "name": "ledger-api",
+  "aliases": [
+   "ledger-v2",
+   "ledger_apiapi"
+  ]
+ },
+ {
+  "svc_id": "LS_001",
+  "name": "fx-feed",
+  "aliases": [
+   "fx-svc",
+   "fx_feedv2"
+  ]
+ },
+ {
+  "svc_id": "LS_002",
+  "name": "settle-batch",
+  "aliases": [
+   "settle-old",
+   "settle_batchgw"
+  ]
+ },
+ {
+  "svc_id": "LS_003",
+  "name": "recon-worker",
+  "aliases": [
+   "recon-core",
+   "recon_workergw"
+  ]
+ },
+ {
+  "svc_id": "LS_004",
+  "name": "voucher-svc",
+  "aliases": [
+   "voucher-v2",
+   "voucher_svcgw"
+  ]
+ },
+ {
+  "svc_id": "LS_005",
+  "name": "invoice-gen",
+  "aliases": [
+   "invoice-gw",
+   "invoice_genapi"
+  ]
+ },
+ {
+  "svc_id": "LS_006",
+  "name": "tax-calc",
+  "aliases": [
+   "tax-core",
+   "tax_calcedge"
+  ]
+ },
+ {
+  "svc_id": "LS_007",
+  "name": "payout-gw",
+  "aliases": [
+   "payout-edge",
+   "payout_gwsvc"
+  ]
+ },
+ {
+  "svc_id": "LS_008",
+  "name": "refund-handler",
+  "aliases": [
+   "refund-old",
+   "refund_handlergw"
+  ]
+ },
+ {
+  "svc_id": "LS_009",
+  "name": "chargeback-svc",
+  "aliases": [
+   "chargeback-edge",
+   "chargeback_svcold"
+  ]
+ },
+ {
+  "svc_id": "LS_010",
+  "name": "balance-svc",
+  "aliases": [
+   "balance-gw",
+   "balance_svcapi"
+  ]
+ },
+ {
+  "svc_id": "LS_011",
+  "name": "statement-gen",
+  "aliases": [
+   "statement-v2",
+   "statement_gengw"
+  ]
+ },
+ {
+  "svc_id": "LS_012",
+  "name": "swift-gw",
+  "aliases": [
+   "swift-old",
+   "swift_gwsvc"
+  ]
+ },
+ {
+  "svc_id": "LS_013",
+  "name": "iso8583-hub",
+  "aliases": [
+   "iso8583-api",
+   "iso8583_hubv2"
+  ]
+ },
+ {
+  "svc_id": "LS_014",
+  "name": "card-auth",
+  "aliases": [
+   "card-svc",
+   "card_authedge"
+  ]
+ },
+ {
+  "svc_id": "LS_015",
+  "name": "fraud-check",
+  "aliases": [
+   "fraud-old",
+   "fraud_checkgw"
+  ]
+ },
+ {
+  "svc_id": "LS_016",
+  "name": "kyc-verify",
+  "aliases": [
+   "kyc-core",
+   "kyc_verifygw"
+  ]
+ },
+ {
+  "svc_id": "LS_017",
+  "name": "aml-screen",
+  "aliases": [
+   "aml-svc",
+   "aml_screenworker"
+  ]
+ },
+ {
+  "svc_id": "LS_018",
+  "name": "limit-guard",
+  "aliases": [
+   "limit-core",
+   "limit_guardapi"
+  ]
+ },
+ {
+  "svc_id": "LS_019",
+  "name": "fee-calc",
+  "aliases": [
+   "fee-core",
+   "fee_calcold"
+  ]
+ },
+ {
+  "svc_id": "LS_020",
+  "name": "gl-poster",
+  "aliases": [
+   "gl-svc",
+   "gl_posterold"
+  ]
+ },
+ {
+  "svc_id": "LS_021",
+  "name": "subledger",
+  "aliases": [
+   "subledger-core",
+   "subledgerapi"
+  ]
+ },
+ {
+  "svc_id": "LS_022",
+  "name": "treasury-api",
+  "aliases": [
+   "treasury-worker",
+   "treasury_apicore"
+  ]
+ },
+ {
+  "svc_id": "LS_023",
+  "name": "liquidity-mon",
+  "aliases": [
+   "liquidity-api",
+   "liquidity_moncore"
+  ]
+ },
+ {
+  "svc_id": "LS_024",
+  "name": "sweep-worker",
+  "aliases": [
+   "sweep-v2",
+   "sweep_workercore"
+  ]
+ },
+ {
+  "svc_id": "LS_025",
+  "name": "nostro-rec",
+  "aliases": [
+   "nostro-old",
+   "nostro_recedge"
+  ]
+ },
+ {
+  "svc_id": "LS_026",
+  "name": "vostro-rec",
+  "aliases": [
+   "vostro-core",
+   "vostro_recold"
+  ]
+ },
+ {
+  "svc_id": "LS_027",
+  "name": "eod-close",
+  "aliases": [
+   "eod-worker",
+   "eod_closev2"
+  ]
+ },
+ {
+  "svc_id": "LS_028",
+  "name": "holiday-cal",
+  "aliases": [
+   "holiday-core",
+   "holiday_calworker"
+  ]
+ },
+ {
+  "svc_id": "LS_029",
+  "name": "fx-hedge",
+  "aliases": [
+   "fx-api",
+   "fx_hedgegw"
+  ]
+ },
+ {
+  "svc_id": "LS_030",
+  "name": "rate-lock",
+  "aliases": [
+   "rate-svc",
+   "rate_lockworker"
+  ]
+ },
+ {
+  "svc_id": "LS_031",
+  "name": "quote-cache",
+  "aliases": [
+   "quote-edge",
+   "quote_cacheold"
+  ]
+ },
+ {
+  "svc_id": "LS_032",
+  "name": "mid-price",
+  "aliases": [
+   "mid-old",
+   "mid_priceapi"
+  ]
+ },
+ {
+  "svc_id": "LS_033",
+  "name": "curve-build",
+  "aliases": [
+   "curve-svc",
+   "curve_buildv2"
+  ]
+ },
+ {
+  "svc_id": "LS_034",
+  "name": "yield-svc",
+  "aliases": [
+   "yield-api",
+   "yield_svcworker"
+  ]
+ },
+ {
+  "svc_id": "LS_035",
+  "name": "spread-calc",
+  "aliases": [
+   "spread-gw",
+   "spread_calccore"
+  ]
+ },
+ {
+  "svc_id": "LS_036",
+  "name": "nav-calc",
+  "aliases": [
+   "nav-core",
+   "nav_calcv2"
+  ]
+ },
+ {
+  "svc_id": "LS_037",
+  "name": "pos-keeper",
+  "aliases": [
+   "pos-edge",
+   "pos_keeperold"
+  ]
+ },
+ {
+  "svc_id": "LS_038",
+  "name": "margin-call",
+  "aliases": [
+   "margin-old",
+   "margin_calledge"
+  ]
+ },
+ {
+  "svc_id": "LS_039",
+  "name": "collateral",
+  "aliases": [
+   "collateral-worker",
+   "collateralold"
+  ]
+ },
+ {
+  "svc_id": "LS_040",
+  "name": "pledge-svc",
+  "aliases": [
+   "pledge-gw",
+   "pledge_svcworker"
+  ]
+ },
+ {
+  "svc_id": "LS_041",
+  "name": "repo-engine",
+  "aliases": [
+   "repo-old",
+   "repo_enginegw"
+  ]
+ },
+ {
+  "svc_id": "LS_042",
+  "name": "coupon-pay",
+  "aliases": [
+   "coupon-worker",
+   "coupon_paysvc"
+  ]
+ },
+ {
+  "svc_id": "LS_043",
+  "name": "redemption",
+  "aliases": [
+   "redemption-old",
+   "redemptiongw"
+  ]
+ },
+ {
+  "svc_id": "LS_044",
+  "name": "transfer-api",
+  "aliases": [
+   "transfer-old",
+   "transfer_apisvc"
+  ]
+ },
+ {
+  "svc_id": "LS_045",
+  "name": "ach-gw",
+  "aliases": [
+   "ach-svc",
+   "ach_gwold"
+  ]
+ },
+ {
+  "svc_id": "LS_046",
+  "name": "sepa-gw",
+  "aliases": [
+   "sepa-gw",
+   "sepa_gwapi"
+  ]
+ },
+ {
+  "svc_id": "LS_047",
+  "name": "chaps-gw",
+  "aliases": [
+   "chaps-old",
+   "chaps_gwv2"
+  ]
+ }
+]

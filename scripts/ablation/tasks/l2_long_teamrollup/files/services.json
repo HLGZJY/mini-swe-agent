@@ -1,0 +1,290 @@
+[
+ {
+  "svc_id": "CS_000",
+  "name": "cap-beacon-00",
+  "aliases": [
+   "cap-beacon-00-v2",
+   "cap_beacon_00.old"
+  ]
+ },
+ {
+  "svc_id": "CS_001",
+  "name": "cap-beacon-01",
+  "aliases": [
+   "cap-beacon-01-v2",
+   "cap_beacon_01.old"
+  ]
+ },
+ {
+  "svc_id": "CS_002",
+  "name": "cap-beacon-02",
+  "aliases": [
+   "cap-beacon-02-old",
+   "cap_beacon_02.svc"
+  ]
+ },
+ {
+  "svc_id": "CS_003",
+  "name": "cap-core-00",
+  "aliases": [
+   "cap-core-00-svc",
+   "cap_core_00.old"
+  ]
+ },
+ {
+  "svc_id": "CS_004",
+  "name": "cap-core-01",
+  "aliases": [
+   "cap-core-01-v2",
+   "cap_core_01.svc"
+  ]
+ },
+ {
+  "svc_id": "CS_005",
+  "name": "cap-core-02",
+  "aliases": [
+   "cap-core-02-bak",
+   "cap_core_02.svc"
+  ]
+ },
+ {
+  "svc_id": "CS_006",
+  "name": "cap-data-00",
+  "aliases": [
+   "cap-data-00-bak",
+   "cap_data_00.old"
+  ]
+ },
+ {
+  "svc_id": "CS_007",
+  "name": "cap-data-01",
+  "aliases": [
+   "cap-data-01-api",
+   "cap_data_01.core"
+  ]
+ },
+ {
+  "svc_id": "CS_008",
+  "name": "cap-data-02",
+  "aliases": [
+   "cap-data-02-core",
+   "cap_data_02.api"
+  ]
+ },
+ {
+  "svc_id": "CS_009",
+  "name": "cap-drift-00",
+  "aliases": [
+   "cap-drift-00-v2",
+   "cap_drift_00.svc"
+  ]
+ },
+ {
+  "svc_id": "CS_010",
+  "name": "cap-drift-01",
+  "aliases": [
+   "cap-drift-01-svc",
+   "cap_drift_01.api"
+  ]
+ },
+ {
+  "svc_id": "CS_011",
+  "name": "cap-drift-02",
+  "aliases": [
+   "cap-drift-02-api",
+   "cap_drift_02.bak"
+  ]
+ },
+ {
+  "svc_id": "CS_012",
+  "name": "cap-edge-00",
+  "aliases": [
+   "cap-edge-00-api",
+   "cap_edge_00.old"
+  ]
+ },
+ {
+  "svc_id": "CS_013",
+  "name": "cap-edge-01",
+  "aliases": [
+   "cap-edge-01-bak",
+   "cap_edge_01.v2"
+  ]
+ },
+ {
+  "svc_id": "CS_014",
+  "name": "cap-edge-02",
+  "aliases": [
+   "cap-edge-02-core",
+   "cap_edge_02.old"
+  ]
+ },
+ {
+  "svc_id": "CS_015",
+  "name": "cap-flow-00",
+  "aliases": [
+   "cap-flow-00-svc",
+   "cap_flow_00.api"
+  ]
+ },
+ {
+  "svc_id": "CS_016",
+  "name": "cap-flow-01",
+  "aliases": [
+   "cap-flow-01-old",
+   "cap_flow_01.v2"
+  ]
+ },
+ {
+  "svc_id": "CS_017",
+  "name": "cap-flow-02",
+  "aliases": [
+   "cap-flow-02-bak",
+   "cap_flow_02.old"
+  ]
+ },
+ {
+  "svc_id": "CS_018",
+  "name": "cap-grid-00",
+  "aliases": [
+   "cap-grid-00-bak",
+   "cap_grid_00.api"
+  ]
+ },
+ {
+  "svc_id": "CS_019",
+  "name": "cap-grid-01",
+  "aliases": [
+   "cap-grid-01-old",
+   "cap_grid_01.api"
+  ]
+ },
+ {
+  "svc_id": "CS_020",
+  "name": "cap-grid-02",
+  "aliases": [
+   "cap-grid-02-old",
+   "cap_grid_02.core"
+  ]
+ },
+ {
+  "svc_id": "CS_021",
+  "name": "cap-mesh-00",
+  "aliases": [
+   "cap-mesh-00-svc",
+   "cap_mesh_00.api"
+  ]
+ },
+ {
+  "svc_id": "CS_022",
+  "name": "cap-mesh-01",
+  "aliases": [
+   "cap-mesh-01-bak",
+   "cap_mesh_01.v2"
+  ]
+ },
+ {
+  "svc_id": "CS_023",
+  "name": "cap-mesh-02",
+  "aliases": [
+   "cap-mesh-02-svc",
+   "cap_mesh_02.v2"
+  ]
+ },
+ {
+  "svc_id": "CS_024",
+  "name": "cap-relay-00",
+  "aliases": [
+   "cap-relay-00-old",
+   "cap_relay_00.bak"
+  ]
+ },
+ {
+  "svc_id": "CS_025",
+  "name": "cap-relay-01",
+  "aliases": [
+   "cap-relay-01-old",
+   "cap_relay_01.bak"
+  ]
+ },
+ {
+  "svc_id": "CS_026",
+  "name": "cap-relay-02",
+  "aliases": [
+   "cap-relay-02-old",
+   "cap_relay_02.v2"
+  ]
+ },
+ {
+  "svc_id": "CS_027",
+  "name": "cap-risk-00",
+  "aliases": [
+   "cap-risk-00-api",
+   "cap_risk_00.bak"
+  ]
+ },
+ {
+  "svc_id": "CS_028",
+  "name": "cap-risk-01",
+  "aliases": [
+   "cap-risk-01-svc",
+   "cap_risk_01.bak"
+  ]
+ },
+ {
+  "svc_id": "CS_029",
+  "name": "cap-risk-02",
+  "aliases": [
+   "cap-risk-02-core",
+   "cap_risk_02.api"
+  ]
+ },
+ {
+  "svc_id": "CS_030",
+  "name": "cap-spark-00",
+  "aliases": [
+   "cap-spark-00-svc",
+   "cap_spark_00.core"
+  ]
+ },
+ {
+  "svc_id": "CS_031",
+  "name": "cap-spark-01",
+  "aliases": [
+   "cap-spark-01-core",
+   "cap_spark_01.api"
+  ]
+ },
+ {
+  "svc_id": "CS_032",
+  "name": "cap-spark-02",
+  "aliases": [
+   "cap-spark-02-v2",
+   "cap_spark_02.api"
+  ]
+ },
+ {
+  "svc_id": "CS_033",
+  "name": "cap-vault-00",
+  "aliases": [
+   "cap-vault-00-old",
+   "cap_vault_00.bak"
+  ]
+ },
+ {
+  "svc_id": "CS_034",
+  "name": "cap-vault-01",
+  "aliases": [
+   "cap-vault-01-old",
+   "cap_vault_01.bak"
+  ]
+ },
+ {
+  "svc_id": "CS_035",
+  "name": "cap-vault-02",
+  "aliases": [
+   "cap-vault-02-core",
+   "cap_vault_02.old"
+  ]
+ }
+]

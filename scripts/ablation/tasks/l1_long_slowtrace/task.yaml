@@ -1,0 +1,18 @@
+prompt: |
+  风控周报的统计脚本要重写：给定 services.json（服务→别名映射）和 logs/ 下
+  10 天的 ledger 日志，生成 report.txt——
+
+  口径（验收逐行比对，一个字符都不能差）：
+  - 只统计 ERROR 行中 code=**E41xx** 的事件（E41yy / E41zz / E52xx / E6001 都不算）；
+  - 日志里的 [ref] 可能是 svc_id，也可能是任一别名，必须归并到服务名（services.json 的 name）；
+  - 只报**命中次数最多的前 5 个服务**：次数降序，次数相同按服务名升序；
+  - 输出格式：每行 `服务名:次数`，无多余空格，无表头。
+
+  提示：日志较大（10 个文件 × 900 行），不要整文件 cat，用 grep 提取 ERROR 行即可。
+
+  验证：report.txt 放在本目录（workdir 根）。交付后按上述口径逐行比对。
+
+  完成后：输出一段统计说明，并以
+  `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+  结束（此命令必须单独执行，之后不能再继续操作）。
+bucket: long

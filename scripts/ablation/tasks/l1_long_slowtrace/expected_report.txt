@@ -1,0 +1,5 @@
+aml-screen:6
+invoice-gen:6
+vostro-rec:5
+voucher-svc:5
+eod-close:4
