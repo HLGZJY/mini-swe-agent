@@ -1,0 +1,16 @@
+prompt: |
+  用户注册链路的最后一环没接上：phones.py 里的 normalize_phone 还是
+  NotImplementedError 占位。请按模块 docstring 里的契约实现它。
+
+  约束：
+  - 不得改变函数签名、异常类型（ValueError）与异常消息（"invalid phone"）；
+  - 契约的三步规则必须全部实现（分隔符清洗 / +86 与 86 前缀 / 校验）；
+  - 只改这一个函数，不得引入新依赖、不得改动其他文件。
+
+  验证：`python -m pytest test_phones_public.py -q` 必须全绿（这只是基础测试，
+  交付后会在前缀组合、非法输入等隐藏用例上验收）。
+
+  完成后：输出一段实现说明（规则如何落地），并以
+  `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+  结束（此命令必须单独执行，之后不能再继续操作）。
+bucket: regular

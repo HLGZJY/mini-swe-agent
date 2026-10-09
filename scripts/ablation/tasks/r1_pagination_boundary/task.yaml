@@ -1,0 +1,18 @@
+prompt: |
+  内部工单列表接口接到用户反馈：翻页时会**偶尔丢最后一条**——不是每页都丢，
+  而是当「本页取完后剩余元素恰好只剩 1 个」的那一页会把它吞掉。
+
+  请排查并修复 pager.py 中的回归。
+
+  约束：
+  - 不得改变 paginate 的签名与返回结构 (page, next_cursor)；
+  - 文件 docstring 记录了完整契约（尤其「边界：剩余恰好 1 个」一条），修复必须
+    满足契约层面正确，而不只是让现有测试通过。
+
+  验证：`python -m pytest test_pager_public.py -q` 必须全绿（这只是基础测试，
+  交付后会在更严格的隐藏用例上验收）。
+
+  完成后：输出一段修复说明（根因 + 修法），并以
+  `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+  结束（此命令必须单独执行，之后不能再继续操作）。
+bucket: regular

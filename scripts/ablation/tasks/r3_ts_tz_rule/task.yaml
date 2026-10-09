@@ -1,0 +1,18 @@
+prompt: |
+  多区部署的日志归一化模块在对账时发现：**不带时区的旧格式日志**（采集端老版本
+  产生）入库时间比真实时间早了 8 小时。
+
+  请排查并修复 timestamps.py 中的回归。
+
+  约束：
+  - 不得改变 to_utc 的签名与输出格式；文件 docstring 记录了完整契约——
+    naive 输入必须按业务约定视为**东八区**（这是采集端的部署事实，不是猜测）；
+  - 带时区输入的既有行为不得回归（test_timestamps_public.py 全绿是底线）。
+
+  验证：`python -m pytest test_timestamps_public.py -q` 必须全绿（这只是基础测试，
+  交付后会在 naive/跨天边界等隐藏用例上验收）。
+
+  完成后：输出一段修复说明（根因 + 修法），并以
+  `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+  结束（此命令必须单独执行，之后不能再继续操作）。
+bucket: regular

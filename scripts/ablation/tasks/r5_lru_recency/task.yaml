@@ -1,0 +1,18 @@
+prompt: |
+  会话缓存模块被投诉「命中率异常低」：按 LRU 语义本不该被淘汰的键频繁消失。
+  排查发现最近一次重构把 get 的一个关键副作用弄丢了。
+
+  请排查并修复 lru.py 中的回归。
+
+  约束：
+  - 不得改变 LRUCache 的公开接口（LRUCache(capacity) / get / put）与文件
+    docstring 契约（尤其：「访问」包括 get 命中与 put，二者都必须刷新新旧序）；
+  - 容量淘汰的其他行为（先进先出的既有测试）不得回归。
+
+  验证：`python -m pytest test_lru_public.py -q` 必须全绿（这只是基础测试，
+  交付后会在「get 刷新新旧序」等隐藏用例上验收）。
+
+  完成后：输出一段修复说明（根因 + 修法），并以
+  `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+  结束（此命令必须单独执行，之后不能再继续操作）。
+bucket: regular

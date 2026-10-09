@@ -1,0 +1,19 @@
+prompt: |
+  API 网关的令牌桶限流器行为异常：**长时间空闲后第一波请求能放行，但连续调用时
+  补充的令牌数和挂钟时间对不上**——空闲 1 秒后本应补充 rate 个令牌，实测补充量
+  与经过时间无关。
+
+  请排查并修复 ratelimit.py 中的回归。
+
+  约束：
+  - 不得改变 TokenBucket 的构造签名（含可注入 clock）与 try_acquire 返回语义；
+  - 文件 docstring 契约必须满足：每次调用（无论成败）都先按 elapsed*rate 补充，
+    上限 capacity；首次调用不补（初始满桶）。
+
+  验证：`python -m pytest test_ratelimit_public.py -q` 必须全绿（这只是基础测试，
+  交付后会在注入假时钟的连续时序用例上验收）。
+
+  完成后：输出一段修复说明（根因 + 修法），并以
+  `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+  结束（此命令必须单独执行，之后不能再继续操作）。
+bucket: regular

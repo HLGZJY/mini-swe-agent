@@ -25,7 +25,17 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 VENV_PY = REPO / ".venv" / "Scripts" / "python.exe"
 
-ALL_TASKS = ["p1_fingerprint_regression", "p2_deadend_retrykit", "p3_long_crossref"]
+ALL_TASKS = [
+    "p1_fingerprint_regression",
+    "p2_deadend_retrykit",
+    "p3_long_crossref",
+    "r1_pagination_boundary",
+    "r2_config_deep_merge",
+    "r3_ts_tz_rule",
+    "r4_phone_normalize",
+    "r5_lru_recency",
+    "r6_token_bucket",
+]
 
 
 def load_preds(path: Path) -> dict:
