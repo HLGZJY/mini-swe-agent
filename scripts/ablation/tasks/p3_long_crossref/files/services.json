@@ -1,0 +1,322 @@
+[
+ {
+  "svc_id": "SVC_00",
+  "name": "billing-api",
+  "aliases": [
+   "billing-gw",
+   "billing_api_core"
+  ]
+ },
+ {
+  "svc_id": "SVC_01",
+  "name": "auth-svc",
+  "aliases": [
+   "auth-worker",
+   "auth_svc_old"
+  ]
+ },
+ {
+  "svc_id": "SVC_02",
+  "name": "gateway",
+  "aliases": [
+   "gateway-api",
+   "gateway_gw"
+  ]
+ },
+ {
+  "svc_id": "SVC_03",
+  "name": "notify-worker",
+  "aliases": [
+   "notify-edge",
+   "notify_worker_core"
+  ]
+ },
+ {
+  "svc_id": "SVC_04",
+  "name": "search-index",
+  "aliases": [
+   "search-gw",
+   "search_index_api"
+  ]
+ },
+ {
+  "svc_id": "SVC_05",
+  "name": "user-profile",
+  "aliases": [
+   "user-core",
+   "user_profile_svc2"
+  ]
+ },
+ {
+  "svc_id": "SVC_06",
+  "name": "order-sync",
+  "aliases": [
+   "order-svc2",
+   "order_sync_old"
+  ]
+ },
+ {
+  "svc_id": "SVC_07",
+  "name": "payment-callback",
+  "aliases": [
+   "payment-svc2",
+   "payment_callback_edge"
+  ]
+ },
+ {
+  "svc_id": "SVC_08",
+  "name": "sms-gateway",
+  "aliases": [
+   "sms-v2",
+   "sms_gateway_bak"
+  ]
+ },
+ {
+  "svc_id": "SVC_09",
+  "name": "email-worker",
+  "aliases": [
+   "email-core",
+   "email_worker_svc"
+  ]
+ },
+ {
+  "svc_id": "SVC_10",
+  "name": "report-gen",
+  "aliases": [
+   "report-edge",
+   "report_gen_core"
+  ]
+ },
+ {
+  "svc_id": "SVC_11",
+  "name": "audit-log",
+  "aliases": [
+   "audit-v2",
+   "audit_log_gw"
+  ]
+ },
+ {
+  "svc_id": "SVC_12",
+  "name": "config-center",
+  "aliases": [
+   "config-core",
+   "config_center_v2"
+  ]
+ },
+ {
+  "svc_id": "SVC_13",
+  "name": "scheduler",
+  "aliases": [
+   "scheduler-gw",
+   "scheduler_edge"
+  ]
+ },
+ {
+  "svc_id": "SVC_14",
+  "name": "quota-guard",
+  "aliases": [
+   "quota-svc2",
+   "quota_guard_old"
+  ]
+ },
+ {
+  "svc_id": "SVC_15",
+  "name": "file-store",
+  "aliases": [
+   "file-edge",
+   "file_store_core"
+  ]
+ },
+ {
+  "svc_id": "SVC_16",
+  "name": "image-thumb",
+  "aliases": [
+   "image-old",
+   "image_thumb_bak"
+  ]
+ },
+ {
+  "svc_id": "SVC_17",
+  "name": "cdn-purge",
+  "aliases": [
+   "cdn-gw",
+   "cdn_purge_core"
+  ]
+ },
+ {
+  "svc_id": "SVC_18",
+  "name": "session-cache",
+  "aliases": [
+   "session-v2",
+   "session_cache_api"
+  ]
+ },
+ {
+  "svc_id": "SVC_19",
+  "name": "rate-limiter",
+  "aliases": [
+   "rate-gw",
+   "rate_limiter_core"
+  ]
+ },
+ {
+  "svc_id": "SVC_20",
+  "name": "webhook-hub",
+  "aliases": [
+   "webhook-edge",
+   "webhook_hub_old"
+  ]
+ },
+ {
+  "svc_id": "SVC_21",
+  "name": "data-sync",
+  "aliases": [
+   "data-v2",
+   "data_sync_edge"
+  ]
+ },
+ {
+  "svc_id": "SVC_22",
+  "name": "etl-nightly",
+  "aliases": [
+   "etl-v2",
+   "etl_nightly_api"
+  ]
+ },
+ {
+  "svc_id": "SVC_23",
+  "name": "geo-router",
+  "aliases": [
+   "geo-v2",
+   "geo_router_api"
+  ]
+ },
+ {
+  "svc_id": "SVC_24",
+  "name": "feature-flag",
+  "aliases": [
+   "feature-api",
+   "feature_flag_v2"
+  ]
+ },
+ {
+  "svc_id": "SVC_25",
+  "name": "cart-svc",
+  "aliases": [
+   "cart-bak",
+   "cart_svc_svc"
+  ]
+ },
+ {
+  "svc_id": "SVC_26",
+  "name": "inventory-hold",
+  "aliases": [
+   "inventory-v2",
+   "inventory_hold_bak"
+  ]
+ },
+ {
+  "svc_id": "SVC_27",
+  "name": "price-engine",
+  "aliases": [
+   "price-edge",
+   "price_engine_bak"
+  ]
+ },
+ {
+  "svc_id": "SVC_28",
+  "name": "coupon-svc",
+  "aliases": [
+   "coupon-gw",
+   "coupon_svc_svc"
+  ]
+ },
+ {
+  "svc_id": "SVC_29",
+  "name": "loyalty-points",
+  "aliases": [
+   "loyalty-edge",
+   "loyalty_points_old"
+  ]
+ },
+ {
+  "svc_id": "SVC_30",
+  "name": "search-suggest",
+  "aliases": [
+   "search-edge",
+   "search_suggest_old"
+  ]
+ },
+ {
+  "svc_id": "SVC_31",
+  "name": "recommend-api",
+  "aliases": [
+   "recommend-api",
+   "recommend_api_svc2"
+  ]
+ },
+ {
+  "svc_id": "SVC_32",
+  "name": "feed-rank",
+  "aliases": [
+   "feed-worker",
+   "feed_rank_old"
+  ]
+ },
+ {
+  "svc_id": "SVC_33",
+  "name": "push-gateway",
+  "aliases": [
+   "push-edge",
+   "push_gateway_svc"
+  ]
+ },
+ {
+  "svc_id": "SVC_34",
+  "name": "ws-hub",
+  "aliases": [
+   "ws-svc",
+   "ws_hub_v2"
+  ]
+ },
+ {
+  "svc_id": "SVC_35",
+  "name": "presence-svc",
+  "aliases": [
+   "presence-old",
+   "presence_svc_edge"
+  ]
+ },
+ {
+  "svc_id": "SVC_36",
+  "name": "chat-log",
+  "aliases": [
+   "chat-api",
+   "chat_log_gw"
+  ]
+ },
+ {
+  "svc_id": "SVC_37",
+  "name": "media-transcode",
+  "aliases": [
+   "media-svc2",
+   "media_transcode_edge"
+  ]
+ },
+ {
+  "svc_id": "SVC_38",
+  "name": "thumb-cdn",
+  "aliases": [
+   "thumb-api",
+   "thumb_cdn_bak"
+  ]
+ },
+ {
+  "svc_id": "SVC_39",
+  "name": "stat-rollup",
+  "aliases": [
+   "stat-worker",
+   "stat_rollup_v2"
+  ]
+ }
+]

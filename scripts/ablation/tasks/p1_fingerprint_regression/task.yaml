@@ -1,0 +1,18 @@
+prompt: |
+  告警去重服务的指纹模块出了线上问题：不同告警偶发被合并成同一条事件（指纹碰撞），
+  怀疑与最近一次对 `_hash` 的「简化」改动有关。
+
+  请排查并修复 fingerprint.py 中的回归。
+
+  约束：
+  - 不得改变任何公开函数的签名与既有语义（canonical_fingerprint / candidate_fingerprints /
+    window_bucket 的现有行为必须保持——文件 docstring 记录了设计契约，注意哈希输入必须抗拼接碰撞）。
+  - 修复范围仅限本模块，不要引入新依赖。
+
+  验证：`python -m pytest test_fingerprint_public.py -q` 必须全绿（这只是基础测试，
+  交付后会在更严格的隐藏用例上验收，请确保设计契约层面的正确性，而不只是让现有测试通过）。
+
+  完成后：输出一段修复说明（碰撞根因 + 修法），并以
+  `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`
+  结束（此命令必须单独执行，之后不能再继续操作）。
+bucket: regular

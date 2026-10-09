@@ -1,0 +1,19 @@
+prompt: |
+  服务健康巡检。config/services.json 定义了 40 个服务，每个服务有 svc_id、name、
+  aliases（1-2 个别名）。logs/ 下有 6 天的应用日志，日志行里的 [ref] 字段可能用
+  svc_id，也可能用任一别名——它们指同一个服务。
+
+  任务：统计全部 logs/*.log 中 level=ERROR 且 error_code 以 "E41" 开头的行，
+  按服务 name 聚合（svc_id 和别名都要归并到 name），在当前目录生成 report.txt：
+
+  - 每行格式 `<name>:<count>`
+  - 按 name 字典序排列
+  - 只包含 count > 0 的服务
+  - 不要修改日志或配置文件
+
+  提示：日志文件较大（每个 260 行），不要一次性 cat 整个文件，用 grep/sed 取目标行即可。
+  别名很多，建议先把 services.json 的映射整理清楚再统计。
+
+  完成后：输出一段说明（统计口径 + 结果概要），并以
+  `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT` 结束（单独执行）。
+bucket: long
