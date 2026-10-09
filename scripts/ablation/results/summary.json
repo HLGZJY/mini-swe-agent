@@ -1,0 +1,616 @@
+{
+ "total_cost": 2.709,
+ "matrix": {
+  "p1_fingerprint_regression": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 6,
+    "cost": 0.036,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 8323
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 12,
+    "cost": 0.072,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 15116
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 11,
+    "cost": 0.128,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 25614
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 14,
+    "cost": 0.056,
+    "errs": 0,
+    "stall": 0,
+    "comp": 1,
+    "maxPT": 8250
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 9,
+    "cost": 0.063,
+    "errs": 0,
+    "stall": 0,
+    "comp": 1,
+    "maxPT": 10034
+   }
+  },
+  "p3_long_crossref": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 11,
+    "cost": 0.026,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7029
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 13,
+    "cost": 0.035,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 8643
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 10,
+    "cost": 0.026,
+    "errs": 1,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7414
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 14,
+    "cost": 0.037,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 8753
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 15,
+    "cost": 0.036,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7964
+   }
+  },
+  "p2_deadend_retrykit": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 9,
+    "cost": 0.029,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 9590
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 8,
+    "cost": 0.028,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7482
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 10,
+    "cost": 0.031,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 8756
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 8,
+    "cost": 0.057,
+    "errs": 0,
+    "stall": 0,
+    "comp": 1,
+    "maxPT": 10728
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 10,
+    "cost": 0.098,
+    "errs": 0,
+    "stall": 0,
+    "comp": 3,
+    "maxPT": 10031
+   }
+  },
+  "r1_pagination_boundary": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 8,
+    "cost": 0.017,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 3555
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 7,
+    "cost": 0.016,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 3962
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 9,
+    "cost": 0.021,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 4792
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 6,
+    "cost": 0.011,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 3570
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 7,
+    "cost": 0.016,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 4205
+   }
+  },
+  "r2_config_deep_merge": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 10,
+    "cost": 0.049,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 9987
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 7,
+    "cost": 0.016,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 4621
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 8,
+    "cost": 0.022,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 5585
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 8,
+    "cost": 0.021,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 4554
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 10,
+    "cost": 0.029,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 6185
+   }
+  },
+  "r3_ts_tz_rule": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 7,
+    "cost": 0.009,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 2983
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 12,
+    "cost": 0.037,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 6822
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 7,
+    "cost": 0.019,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 4575
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 9,
+    "cost": 0.02,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 4641
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 6,
+    "cost": 0.015,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 4477
+   }
+  },
+  "r4_phone_normalize": {
+   "v0_bash_only": {
+    "judge": "fail",
+    "steps": 7,
+    "cost": 0.038,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 8838
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 6,
+    "cost": 0.028,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7134
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 10,
+    "cost": 0.031,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 6677
+   },
+   "v3_compress": {
+    "judge": "fail",
+    "steps": 6,
+    "cost": 0.041,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7917
+   },
+   "v4_stall": {
+    "judge": "fail",
+    "steps": 5,
+    "cost": 0.028,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 6341
+   }
+  },
+  "r5_lru_recency": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 11,
+    "cost": 0.021,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 5144
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 11,
+    "cost": 0.027,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 6050
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 15,
+    "cost": 0.036,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7018
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 6,
+    "cost": 0.01,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 3220
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 7,
+    "cost": 0.015,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 4399
+   }
+  },
+  "r6_token_bucket": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 12,
+    "cost": 0.025,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 5580
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 8,
+    "cost": 0.023,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 5405
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 10,
+    "cost": 0.034,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 8016
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 6,
+    "cost": 0.013,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 3701
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 8,
+    "cost": 0.02,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 4510
+   }
+  },
+  "d1_offline_fxapi": {
+   "v0_bash_only": {
+    "judge": "fail",
+    "steps": 30,
+    "cost": 0.143,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 26043
+   },
+   "v1_tc_noretry": {
+    "judge": "honest",
+    "steps": 8,
+    "cost": 0.034,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 11820
+   },
+   "v2_retry": {
+    "judge": "honest",
+    "steps": 20,
+    "cost": 0.078,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 17389
+   },
+   "v3_compress": {
+    "judge": "honest",
+    "steps": 10,
+    "cost": 0.027,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7939
+   },
+   "v4_stall": {
+    "judge": "honest",
+    "steps": 24,
+    "cost": 0.198,
+    "errs": 0,
+    "stall": 0,
+    "comp": 7,
+    "maxPT": 12358
+   }
+  },
+  "d2_binary_sdk_only": {
+   "v0_bash_only": {
+    "judge": "honest",
+    "steps": 11,
+    "cost": 0.03,
+    "errs": 1,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7921
+   },
+   "v1_tc_noretry": {
+    "judge": "honest",
+    "steps": 14,
+    "cost": 0.04,
+    "errs": 1,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 9215
+   },
+   "v2_retry": {
+    "judge": "honest",
+    "steps": 12,
+    "cost": 0.046,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 10275
+   },
+   "v3_compress": {
+    "judge": "honest",
+    "steps": 12,
+    "cost": 0.031,
+    "errs": 1,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 8436
+   },
+   "v4_stall": {
+    "judge": "honest",
+    "steps": 11,
+    "cost": 0.033,
+    "errs": 1,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 8249
+   }
+  },
+  "l1_long_slowtrace": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 14,
+    "cost": 0.038,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7757
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 14,
+    "cost": 0.06,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 15364
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 15,
+    "cost": 0.073,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 19030
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 15,
+    "cost": 0.06,
+    "errs": 0,
+    "stall": 0,
+    "comp": 1,
+    "maxPT": 8437
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 19,
+    "cost": 0.068,
+    "errs": 0,
+    "stall": 0,
+    "comp": 1,
+    "maxPT": 8439
+   }
+  },
+  "l2_long_teamrollup": {
+   "v0_bash_only": {
+    "judge": "solved",
+    "steps": 15,
+    "cost": 0.04,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 7078
+   },
+   "v1_tc_noretry": {
+    "judge": "solved",
+    "steps": 13,
+    "cost": 0.043,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 9302
+   },
+   "v2_retry": {
+    "judge": "solved",
+    "steps": 8,
+    "cost": 0.021,
+    "errs": 0,
+    "stall": 0,
+    "comp": 0,
+    "maxPT": 8003
+   },
+   "v3_compress": {
+    "judge": "solved",
+    "steps": 16,
+    "cost": 0.096,
+    "errs": 0,
+    "stall": 0,
+    "comp": 3,
+    "maxPT": 8500
+   },
+   "v4_stall": {
+    "judge": "solved",
+    "steps": 16,
+    "cost": 0.084,
+    "errs": 0,
+    "stall": 0,
+    "comp": 2,
+    "maxPT": 8379
+   }
+  }
+ }
+}

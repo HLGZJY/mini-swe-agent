@@ -187,5 +187,8 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 
-# 魔改6 消融评测产物（不入 git：体积大且可由 preds/summary 复盘）
-scripts/ablation/results/
+# 魔改6 消融评测产物（轨迹/中间态不入 git：体积大且可由 runner 复跑）
+# 但聚合结论 summary.md/json 是评测数字的仓库内凭据，必须入库（简历数字可验证）
+scripts/ablation/results/*
+!scripts/ablation/results/summary.md
+!scripts/ablation/results/summary.json
